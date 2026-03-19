@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blitz</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { background-color: #0a0a0a; color: #fff; }
+        .blitz-yellow { color: #facc15; }
+        .btn-main { background-color: #facc15; color: #0a0a0a; font-weight: bold; }
+    </style>
+</head>
+<body class="flex flex-col items-center justify-center h-screen p-6 text-center">
+    <img src="ko%27k%20logo.png" alt="Blitz Logo" style="max-height: 120px; width: auto; display: block; margin: 0 auto;" />
+
+    <h1 class="text-3xl font-bold mb-2 blitz-yellow">Blitz</h1>
+    <p class="text-gray-400 mb-8">Germaniya sari yo'lingizni biz bilan boshlang!</p>
+
+    <button onclick="window.location.href='https://t.me/Blitz_nemsitili_info'"
+            class="btn-main px-8 py-3 rounded-full transition-transform active:scale-95">
+        Botga qaytish
+    </button>
+
+    <script>
+        const tg = window.Telegram.WebApp;
+        tg.expand();
+    </script>
+</body>
+</html>
