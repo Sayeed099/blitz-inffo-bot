@@ -1,0 +1,15 @@
+{
+  "name": "blitz-nemistili-info-bot",
+  "version": "1.0.0",
+  "description": "Blitz_nemsitili_info Telegram bot backend (grammY).",
+  "main": "bot.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node bot.js"
+  },
+  "dependencies": {
+    "dotenv": "^16.6.1",
+    "google-spreadsheet": "^4.1.4",
+    "grammy": "^1.41.1"
+  }
+}
