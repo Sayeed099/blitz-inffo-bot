@@ -1,9 +1,15 @@
-const { Telegraf, Markup } = require('telegraf');
-const path = require('path');
-const fs = require('fs');
+require("dotenv").config();
+const { Telegraf, Markup } = require("telegraf");
+const path = require("node:path");
+const fs = require("node:fs");
 
-const bot = new Telegraf('8611408395:AAFLc5nCy5vGR72IQEmX899hITId5IEkZgw');
-const adminGroupId = '-1003356128763';
+const token = process.env.BOT_TOKEN;
+const adminGroupId = process.env.ADMIN_GROUP_ID;
+
+if (!token) throw new Error("BOT_TOKEN is missing. Set it in .env / Vercel env vars.");
+if (!adminGroupId) throw new Error("ADMIN_GROUP_ID is missing. Set it in .env / Vercel env vars.");
+
+const bot = new Telegraf(token);
 
 // Asosiy tugmalar nomlari
 const BUTTONS = {
@@ -125,13 +131,6 @@ bot.hears(BUTTONS.addresses, (ctx) => ctx.reply("📍 Bizning manzillarimiz:\n1.
 
 // Vercel uchun eksport
 module.exports = async (req, res) => {
-    try {
-        if (req.method === 'POST') {
-            await bot.handleUpdate(req.body);
-        }
-        res.status(200).send('OK');
-    } catch (e) {
-        console.error(e);
-        res.status(500).send('Error');
-    }
+    // Telegraf webhook handler: parses request body itself (works on Vercel)
+    return bot.webhookCallback("/api/bot")(req, res);
 };

@@ -10,6 +10,7 @@
   "dependencies": {
     "dotenv": "^16.6.1",
     "google-spreadsheet": "^4.1.4",
-    "grammy": "^1.41.1"
+    "grammy": "^1.41.1",
+    "telegraf": "^4.16.3"
   }
 }
