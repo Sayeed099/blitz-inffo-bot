@@ -60,7 +60,7 @@ const BUTTONS = {
 
 const GERMANY = {
     workVisa: "1️⃣ Ishchi visa",
-    ausbildung: "2️⃣ Ausbilding",
+    ausbildung: "2️⃣ Ausbildung",
     studienkolleg: "3️⃣ Studienkolleg",
     bachelor: "4️⃣ Bakalavr",
     master: "5️⃣ Magistr",
@@ -92,17 +92,122 @@ function replyGermanyHtml(ctx, html) {
 
 const GERMANY_DETAIL_HTML = {
     workVisa:
-        "<b>1️⃣ Ishchi visa (Work Visa)</b>\n\n<b>👤 Kimlar uchun?</b>\n– Diplomga ega bo‘lganlar\n– Mutaxassisligi bo‘yicha ishlashni istaganlar\n\n<b>✅ Talablar:</b>\nDiplom: kollej yoki bakalavr\nTil sertifikati: Goethe / Telc / ÖSD\nYosh: 20–40 yosh\n\n<b>💰 Harajat:</b> 1 500$ – 2 500$\n\n<b>🚀 Imkoniyatlar:</b> Qonuniy ishlash, oilani chaqirish, 3–5 yilda doimiy yashash.\n\n<b>Murojaat uchun : @Hoff_admin.",
+        "<b>1️⃣ Ishchi visa (Work Visa)</b>\n\n" +
+        "<b>👤 Kimlar uchun?</b>\n\n" +
+        "– Diplomga ega bo‘lganlar (kollej yoki bakalavr)\n" +
+        "– Mutaxassisligi bo‘yicha ishlashni istaganlar\n" +
+        "– Tezroq daromad va mustaqillikni xohlaganlar\n" +
+        "– Oilasini keyinchalik olib kelmoqchi bo‘lganlar\n\n" +
+        "<b>✅ Talablar:</b>\n\n" +
+        "Diplom: kollej (3 yillik) yoki bakalavr\n" +
+        "Til sertifikati: Goethe / Telc / ÖSD\n" +
+        "Yosh: 20–40 yosh\n\n" +
+        "<b>💰 Harajat:</b>\n\n" +
+        "1 500$ – 2 500$\n\n" +
+        "<b>🚀 Imkoniyatlar:</b>\n\n" +
+        "✔️ Qonuniy ishlash va yashash\n" +
+        "✔️ Yashash ruxsati\n" +
+        "✔️ Ijtimoiy sug‘urta\n" +
+        "✔️ Oilani chaqirish (daromad va uy yetarli bo‘lsa)\n" +
+        "✔️ Bolalar bepul maktabga boradi\n" +
+        "✔️ 3–5 yildan keyin doimiy yashash\n" +
+        "✔️ Blue Card bo‘lsa muddat qisqaradi\n" +
+        "✔️ Schengen hududida erkin safar\n\n" +
+        "<b>Murojaat uchun : @Hoff_admin</b>",
+
     ausbildung:
-        "<b>2️⃣ Ausbildung (Kasbiy ta’lim)</b>\n\n<b>👤 Kimlar uchun?</b>\n– 11 yillik ta’lim bitirganlar\n– O‘qish bilan birga maosh olishni xohlaganlar\n\n<b>✅ Talablar:</b>\nTil: Nemis tili B1\nYosh: odatda 30 yoshgacha\n\n<b>💰 Harajat:</b> 1 500$ – 2 000$\n\n<b>🚀 Imkoniyatlar:</b> O‘qish davomida maosh, tugatgach ishga qolish.\n\n<b>Murojaat uchun : @Hoff_admin.",
+        "<b>2️⃣ Ausbildung (Kasbiy ta’lim)</b>\n\n" +
+        "<b>👤 Kimlar uchun?</b>\n\n" +
+        "– 11 yillik ta’lim bitirganlar\n" +
+        "– Universitet o‘qimasdan kasb egallamoqchilar\n" +
+        "– O‘qish bilan birga maosh olishni xohlaganlar\n" +
+        "– Yoshlar (odatda 18–30 yosh)\n\n" +
+        "<b>✅ Talablar:</b>\n\n" +
+        "11 yillik ta’lim\n" +
+        "Nemis tili B1 (ba’zi sohalarga B2)\n" +
+        "Yosh: odatda 30 yoshgacha\n\n" +
+        "<b>💰 Harajat:</b>\n\n" +
+        "1 500$ – 2 000$\n\n" +
+        "<b>🚀 Imkoniyatlar:</b>\n\n" +
+        "✔️ O‘qish davomida maosh\n" +
+        "✔️ Rasmiy ish tajribasi\n" +
+        "✔️ Sug‘urta va ijtimoiy tizim\n" +
+        "✔️ Tugatgach ishga qolish\n" +
+        "✔️ Keyinchalik ishchi vizaga o‘tish\n" +
+        "✔️ Doimiy yashash imkoniyati\n" +
+        "⚠️ Oila olib kelish paytida daromad talabi sababli qiyin bo‘lishi mumkin\n\n" +
+        "<b>Murojaat uchun : @Hoff_admin</b>",
+
     studienkolleg:
-        "<b>3️⃣ Studienkolleg (Tayyorlov)</b>\n\n<b>✅ Talablar:</b>\nNemis tili B1–B2, Kirish imtihoni, Moliyaviy kafolat.\n\n<b>🚀 Imkoniyatlar:</b> 1 yillik tayyorlovdan so'ng universitetga kirish huquqi.\n\n<b>Murojaat uchun : @Hoff_admin.",
+        "<b>3️⃣ Studienkolleg (Tayyorlov bosqichi)</b>\n\n" +
+        "<b>👤 Kimlar uchun?</b>\n\n" +
+        "– 11 yillik maktab bitirganlar\n" +
+        "– Diplomi Germaniya bakalavriga to‘g‘ri kelmaganlar\n\n" +
+        "<b>✅ Talablar:</b>\n\n" +
+        "Nemis tili B1–B2\n" +
+        "Kirish imtihoni\n" +
+        "Moliyaviy kafolat\n\n" +
+        "<b>🚀 Imkoniyatlar:</b>\n\n" +
+        "✔️ 1 yillik tayyorlov\n" +
+        "✔️ Oxirida universitetga kirish huquqi\n" +
+        "✔️ Bakalavrga ko‘prik\n" +
+        "⚠️ Oila olib kelish deyarli mumkin emas.\n\n" +
+        "<b>Murojaat uchun : @Hoff_admin</b>",
+
     bachelor:
-        "<b>4️⃣ Bakalavr (Bachelor)</b>\n\n<b>✅ Talablar:</b>\n12 yillik ta’lim, Nemis tili C1.\n\n<b>💰 Harajat:</b> Oyiga 1 091 € bloklangan hisob.\n\n<b>🚀 Imkoniyatlar:</b> Haftasiga 20 soat ishlash, bitirgach 18 oy ish qidirish vizasi.\n\n<b>Murojaat uchun : @Hoff_admin.",
+        "<b>4️⃣ Bakalavr (Bachelor)</b>\n\n" +
+        "<b>👤 Kimlar uchun?</b>\n\n" +
+        "– Oliy ta’lim olishni istaganlar\n" +
+        "– Akademik karyera rejasidagilar\n\n" +
+        "<b>✅ Talablar:</b>\n\n" +
+        "12 yillik ta’lim (11 yillik bo‘lsa Studienkolleg)\n" +
+        "Nemis tili C1 (ba’zi yo‘nalishlarga B2)\n\n" +
+        "<b>💰 Harajat:</b>\n\n" +
+        "Oyiga 1 091 € bloklangan hisob\n" +
+        "Chiqib ketguncha 1 500$ – 2 000$\n\n" +
+        "<b>🚀 Imkoniyatlar:</b>\n\n" +
+        "✔️ Haftasiga 20 soatgacha ishlash\n" +
+        "✔️ Bitirgandan keyin 18 oy ish qidirish vizasi\n" +
+        "✔️ Ish topsa ishchi vizaga o‘tish\n" +
+        "✔️ Doimiy yashash imkoniyati\n\n" +
+        "<b>Murojaat uchun : @Hoff_admin</b>",
+
     master:
-        "<b>5️⃣ Magistr (Master)</b>\n\n<b>✅ Talablar:</b>\nBakalavr diplomi, Nemis tili C1 yoki Ingliz tili (IELTS 6.5).\n\n<b>🚀 Imkoniyatlar:</b> Yuqori akademik daraja va oson ish topish.\n\n<b>Murojaat uchun : @Hoff_admin.",
+        "<b>5️⃣ Magistr (Master)</b>\n\n" +
+        "<b>👤 Kimlar uchun?</b>\n\n" +
+        "– Bakalavrni tugatganlar\n" +
+        "– Yuqori malaka va karyera istaganlar\n\n" +
+        "<b>✅ Talablar:</b>\n\n" +
+        "Tan olingan bakalavr diplomi\n" +
+        "Nemis tili C1\n" +
+        "Ingliz tili: IELTS kamida 6.5\n" +
+        "Ba’zan motivatsion xat va tajriba\n\n" +
+        "<b>🚀 Imkoniyatlar:</b>\n\n" +
+        "✔️ Akademik daraja yuqori\n" +
+        "✔️ Ish topish ehtimoli ko‘proq\n" +
+        "✔️ 18 oy ish qidirish vizasi\n" +
+        "✔️ Ishga o‘tgach doimiy yashash imkoniyati\n\n" +
+        "<b>Murojaat uchun : @Hoff_admin</b>",
+
     sprachkurs:
-        "<b>6️⃣ Til kursi (Sprachkurs)</b>\n\n<b>✅ Talablar:</b>\nKamida A2 daraja, Til kursiga qabul, Moliyaviy kafolat.\n\n<b>🚀 Imkoniyatlar:</b> Germaniyada tilni tez o'rganish va keyin Ausbildungga o'tish.\n\n<b>Murojaat uchun : @Hoff_admin.",
+        "<b>6️⃣ Til kursi (Sprachkurs Visasi)</b>\n\n" +
+        "<b>👤 Kimlar uchun?</b>\n\n" +
+        "– Nemis tilini Germaniyada o‘rganmoqchi bo‘lganlar\n" +
+        "– Keyinchalik Ausbildung yoki universitetga kirishni rejalayotganlar\n" +
+        "– Hozircha til darajasi yetarli bo‘lmaganlar\n\n" +
+        "<b>✅ Talablar:</b>\n\n" +
+        "– Nemis tili kamida A2 darajadan boshlanishi kerak\n" +
+        "– Til kursiga qabul hujjati\n" +
+        "– Moliyaviy kafolat\n\n" +
+        "<b>💰 Harajat:</b>\n\n" +
+        "– Oyiga 1 091 € bloklangan hisob\n" +
+        "– Chiqib ketguncha taxminan 1 500$ – 2 000$ xizmat harajatlari\n\n" +
+        "<b>🚀 Imkoniyatlar:</b>\n\n" +
+        "✔️ Germaniyada tilni tez va muhitda o‘rganish\n" +
+        "✔️ Keyinchalik Ausbildung yoki universitetga o‘tish imkoniyati\n" +
+        "✔️ Yevropa muhitida yashab tilni rivojlantirish\n" +
+        "✔️ Haftasiga 20 soatgacha ishlash imkoniyati\n\n" +
+        "<b>Murojaat uchun : @Hoff_admin</b>",
 };
 
 function mainMenuKeyboard() {
