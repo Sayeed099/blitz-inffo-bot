@@ -5,8 +5,8 @@ const fs = require('fs');
 const bot = new Telegraf('8611408395:AAFLc5nCy5vGR72IQEmX899hITId5IEkZgw');
 const adminGroupId = '-1003356128763';
 
-/** Videoni botga yuboring — javobdagi file_id ni nusxalab shu qatorga qo‘ying (Vercelda disk yo‘q bo‘lsa shu usul ishlaydi). */
-const LESSON1_VIDEO_FILE_ID = '';
+const LESSON1_VIDEO_FILE_ID =
+    'BAACAgIAAxkBAAPQabqPHBGMF4SuezNFGDJcxtkWfFgAAk1QAAIj70BKn2_zE9DFYZ46BA';
 
 const BUTTONS = {
     lesson1: "Nemis tilidan birinchi darsni olish",
@@ -66,46 +66,6 @@ bot.on("contact", async (ctx) => {
     return ctx.reply("Rahmat, ro'yxatdan o'tdingiz!", mainMenuKeyboard());
 });
 
-function replyLessonVideoFileId(ctx, fileId, howSent) {
-    const hint =
-        howSent === "document"
-            ? "\n\n(iPhone/Androidda «Video» sifatida emas, «Fayl» bilan yuborilgan — baribir file_id ishlaydi.)"
-            : "";
-    return ctx
-        .reply(
-            "📎 Video qabul qilindi." +
-                hint +
-                "\n\nQuyidagi file_id ni butunlay tanlab nusxalang va api/bot.js ichida LESSON1_VIDEO_FILE_ID = '...' ga yozing:\n\n" +
-                fileId
-        )
-        .catch((err) => console.error("file_id javobi yuborilmadi:", err));
-}
-
-// Oddiy video xabari (kamera / «Video» tugmasi)
-bot.on("video", (ctx) => {
-    return replyLessonVideoFileId(ctx, ctx.message.video.file_id, "video");
-});
-
-// Ko‘pchilik telefonlarda fayl sifatida yuboriladi — bu yerda message.video bo‘lmaydi
-bot.on("document", (ctx) => {
-    const doc = ctx.message.document;
-    const mime = doc.mime_type || "";
-    if (!mime.startsWith("video/")) return;
-    return replyLessonVideoFileId(ctx, doc.file_id, "document");
-});
-
-// Dumaloq video — file_id boshqa tur; dars uchun imkon qadar oddiy video yuboring
-bot.on("video_note", (ctx) => {
-    const id = ctx.message.video_note.file_id;
-    return ctx
-        .reply(
-            "📎 Dumaloq video (video note) file_id:\n\n" +
-                id +
-                "\n\n⚠️ Dars menyusida ko‘rinishi uchun odatda oddiy video (yoki .mp4 fayl) yuborilgan file_id ishlatiladi."
-        )
-        .catch((err) => console.error("file_id javobi yuborilmadi:", err));
-});
-
 // --- VIDEO DARS ---
 bot.hears(BUTTONS.lesson1, async (ctx) => {
     await ctx.reply("Birinchi dars yuklanmoqda, iltimos kuting... ⏳");
@@ -118,11 +78,7 @@ bot.hears(BUTTONS.lesson1, async (ctx) => {
         if (fs.existsSync(videoPath)) {
             return await ctx.replyWithVideo({ source: videoPath }, { caption });
         }
-        return ctx.reply(
-            "Video hozircha ulangan emas.\n\n" +
-                "1) Dars videosini shu botga yuboring — file_id chiqadi.\n" +
-                "2) O‘sha matnni LESSON1_VIDEO_FILE_ID ga yozing yoki loyihaga video.mp4 qo‘ying."
-        );
+        return ctx.reply("Dars videosi hozircha mavjud emas. Keyinroq urinib ko‘ring yoki markaz bilan bog‘laning.");
     } catch (e) {
         return ctx.reply("Video yuklashda xatolik yuz berdi.");
     }
