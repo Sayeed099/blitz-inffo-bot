@@ -6,9 +6,9 @@ const bot = new Telegraf('8611408395:AAFLc5nCy5vGR72IQEmX899hITId5IEkZgw');
 const adminGroupId = '-1003356128763';
 
 const BUTTONS = {
-    lesson1: "Nemis tilidan birinchi darsni olish 🎥",
+    lesson1: "Nemis tilidan birinchi darsni olish",
     germany: "🇩🇪 Germaniya haqida ma'lumot",
-    center: "🏢 Blitz haqida",
+    center: "Blitz nemis tili markazi haqida",
     addresses: "📍 Bizning manzillar",
     back: "⬅️ Orqaga"
 };
@@ -24,7 +24,7 @@ const GERMANY = {
 
 // --- START ---
 bot.start((ctx) => {
-    return ctx.reply("Assalomu alaykum! Blitz nemis tili markazi botiga xush kelibsiz.\nIltimos, xizmatlardan foydalanish uchun telefon raqamingizni yuboring:", 
+    return ctx.reply("Assalomu alaykum ! \nBlitz nemis tili markazi botiga xush kelibsiz.\nIltimos, xizmatlardan foydalanish uchun telefon raqamingizni yuboring:", 
         Markup.keyboard([[Markup.button.contactRequest("📱 Telefon raqamni yuborish")]]).resize()
     );
 });
@@ -44,7 +44,8 @@ bot.on('contact', async (ctx) => {
     return ctx.reply("Ma'lumotlaringiz qabul qilindi. Markazimiz xizmatlari bilan tanishishingiz mumkin.", 
         Markup.keyboard([
             [BUTTONS.lesson1],
-            [BUTTONS.germany, BUTTONS.center],
+            [BUTTONS.germany],
+            [BUTTONS.center],
             [BUTTONS.addresses]
         ]).resize()
     );
@@ -85,7 +86,7 @@ bot.hears(GERMANY.master, (ctx) => ctx.reply("<b>5️⃣ MAGISTR (Master)</b>\n\
 bot.hears(GERMANY.sprachkurs, (ctx) => ctx.reply("<b>6️⃣ TIL KURSI (Sprachkurs)</b>\n\n<b>✅ Talablar:</b>\nKamida A2 daraja, Til kursiga qabul, Moliyaviy kafolat.\n\n<b>🚀 Imkoniyatlar:</b> Germaniyada tilni tez o'rganish va keyin Ausbildungga o'tish.", { parse_mode: 'HTML' }));
 
 bot.hears(BUTTONS.back, (ctx) => {
-    return ctx.reply("Asosiy menyu:", Markup.keyboard([[BUTTONS.lesson1], [BUTTONS.germany, BUTTONS.center], [BUTTONS.addresses]]).resize());
+    return ctx.reply("Asosiy menyu:", Markup.keyboard([[BUTTONS.lesson1], [BUTTONS.germany], [BUTTONS.center], [BUTTONS.addresses]]).resize());
 });
 
 bot.hears(BUTTONS.center, (ctx) => ctx.reply("🏢 <b>Blitz Nemis Tili Markazi</b>\nGermaniyada muvaffaqiyatli karyera qurishingiz uchun ishonchli ko'prik!", { parse_mode: 'HTML' }));
