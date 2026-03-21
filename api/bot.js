@@ -49,12 +49,12 @@ const BUTTONS = {
 };
 
 const GERMANY = {
-    workVisa: "1️⃣ ISHCHI VIZA",
-    ausbildung: "2️⃣ AUSBILDUNG",
-    studienkolleg: "3️⃣ STUDIENKOLLEG",
-    bachelor: "4️⃣ BAKALAVR",
-    master: "5️⃣ MAGISTR",
-    sprachkurs: "6️⃣ TIL KURSI",
+    workVisa: "1️⃣ Ishchi visa",
+    ausbildung: "2️⃣ Ausb",
+    studienkolleg: "3️⃣ Studienkolleg",
+    bachelor: "4️⃣ Bakalavr",
+    master: "5️⃣ Magistartura",
+    sprachkurs: "6️⃣ Til kursi",
 };
 
 function mainMenuKeyboard() {
@@ -178,48 +178,65 @@ const BRANCHES = [
     },
 ];
 
-function formatBranchCaption(b) {
-    const lines = [
-        `📍 <b>${escapeHtml(b.titleLine)}</b>`,
-        `🏠 ${escapeHtml(b.address)}`,
-        `🚇 ${escapeHtml(b.directionsPrefix)}: ${escapeHtml(b.directionsText)}`,
-    ];
-    if (b.bus) lines.push(`🚌 Bus: ${escapeHtml(b.bus)}`);
-    lines.push(`☎️ ${escapeHtml(b.phone)}`);
-    return lines.join("\n");
-}
+const BRANCH_MENU_LABELS = [
+    "Mirzo Ulug'bek",
+    "Integro",
+    "Alisher Navoiy",
+    "Bodomzor",
+    "Samarqand",
+    "Narpay",
+    "Farg'ona",
+    "Andijon",
+];
 
-function branchesPickerKeyboard() {
-    const labels = [
-        "Mirzo Ulug'bek",
-        "Integro",
-        "Alisher Navoiy",
-        "Bodomzor",
-        "Samarqand",
-        "Narpay",
-        "Farg'ona",
-        "Andijon",
-    ];
+const BRANCH_PICKER_BACK = "⬅️ Asosiy menyu";
+
+function branchesReplyKeyboard() {
     const rows = [];
-    for (let i = 0; i < labels.length; i += 2) {
-        const row = [
-            Markup.button.callback(labels[i], `br:${i}`),
-            Markup.button.callback(labels[i + 1], `br:${i + 1}`),
-        ];
-        rows.push(row);
+    for (let i = 0; i < BRANCH_MENU_LABELS.length; i += 2) {
+        rows.push([BRANCH_MENU_LABELS[i], BRANCH_MENU_LABELS[i + 1]]);
     }
-    return Markup.inlineKeyboard(rows);
+    rows.push([BRANCH_PICKER_BACK]);
+    return Markup.keyboard(rows).resize();
 }
 
-function branchLinksKeyboard(b) {
-    return Markup.inlineKeyboard([
-        [
-            Markup.button.url("🌍 Yandex Map", b.yandexUrl),
-            Markup.button.url("🌍 Google Map", b.googleUrl),
-            Markup.button.url("📨 Telegram", b.telegramUrl),
-        ],
-    ]);
+/** 3-rasmdagi tartib: blockquote manzil, bo'sh qatorlar, havolalar matn ichida */
+function formatBranchCaptionHtml(b) {
+    const titleDisplay = b.titleLine.replace(/\s*\|\s*/g, " ");
+    const addr = escapeHtml(b.address);
+    const dirP = escapeHtml(b.directionsPrefix);
+    const dirT = escapeHtml(b.directionsText);
+    const ph = escapeHtml(b.phone);
+
+    const head = `📍 <b>${escapeHtml(titleDisplay)}</b>`;
+    const quote = `<blockquote>${addr}</blockquote>`;
+    const maps =
+        `🌍 <a href="${b.yandexUrl}">Yandex Map</a>\n` +
+        `🌍 <a href="${b.googleUrl}">Google Map</a>`;
+    let body = `🚇 ${dirP}: ${dirT}`;
+    if (b.bus) body += `\n🚌 Bus: ${escapeHtml(b.bus)}`;
+    const phoneLine = `☎️ ${ph}`;
+    const tgLine = `📩 <a href="${b.telegramUrl}">Telegram</a>`;
+
+    return [head + "\n\n" + quote, maps, body, phoneLine, tgLine].join("\n\n");
 }
+
+async function replyBranchCard(ctx, b) {
+    const caption = formatBranchCaptionHtml(b);
+    const photoId = BRANCHES_PHOTO_FILE_ID || BLITZ_CENTER_PHOTO_FILE_ID;
+    try {
+        if (photoId) {
+            return await ctx.replyWithPhoto(photoId, {
+                caption,
+                parse_mode: "HTML",
+            });
+        }
+        return await ctx.reply(caption, { parse_mode: "HTML" });
+    } catch (e) {
+        console.error("Filial rasm/xabar yuborishda xato", e);
+        return ctx.reply(caption, { parse_mode: "HTML" });
+    }
+r}
 
 // --- START ---
 bot.start((ctx) => {
@@ -319,32 +336,15 @@ bot.hears(BUTTONS.center, async (ctx) => {
     }
 });
 bot.hears(BUTTONS.addresses, (ctx) => {
-    return ctx.reply("Kerakli filialni tanlang:", branchesPickerKeyboard());
+    return ctx.reply("Kerakli filialni tanlang:", branchesReplyKeyboard());
 });
 
-bot.action(/^br:(\d+)$/, async (ctx) => {
-    const idx = Number(ctx.match[1]);
-    const b = BRANCHES[idx];
-    if (!b) {
-        return ctx.answerCbQuery("Filial topilmadi");
-    }
-    await ctx.answerCbQuery();
-    const caption = formatBranchCaption(b);
-    const links = branchLinksKeyboard(b);
-    const photoId = BRANCHES_PHOTO_FILE_ID || BLITZ_CENTER_PHOTO_FILE_ID;
-    try {
-        if (photoId) {
-            return await ctx.replyWithPhoto(photoId, {
-                caption,
-                parse_mode: "HTML",
-                ...links,
-            });
-        }
-        return await ctx.reply(caption, { parse_mode: "HTML", ...links });
-    } catch (e) {
-        console.error("Filial rasm/xabar yuborishda xato", e);
-        return ctx.reply(caption, { parse_mode: "HTML", ...links });
-    }
+bot.hears(BRANCH_PICKER_BACK, (ctx) => {
+    return ctx.reply("Asosiy menyu:", mainMenuKeyboard());
+});
+
+BRANCH_MENU_LABELS.forEach((label, idx) => {
+    bot.hears(label, (ctx) => replyBranchCard(ctx, BRANCHES[idx]));
 });
 
 // --- VERCEL EXPORT ---
