@@ -51,10 +51,10 @@ function addRegisteredChatId(chatId) {
 }
 
 const BUTTONS = {
-    lesson1: "Nemis tilidan birinchi darsni olish 🎥",
+    lesson1: "Nemis tilidan birinchi darsni olish",
     germany: "🇩🇪 Germaniya haqida ma'lumot",
     center: "Blitz nemis tili markazi haqida",
-    addresses: "📍 Bizning manzillar",
+    addresses: "Bizning manzillar",
     back: "⬅️ Orqaga"
 };
 
@@ -333,7 +333,7 @@ bot.command('stats', (ctx) => {
 // --- VIDEO DARS ---
 bot.hears(BUTTONS.lesson1, async (ctx) => {
     await ctx.reply("Birinchi dars yuklanmoqda, iltimos kuting... ⏳");
-    const caption = "🎥 1-Dars: Ich heiße Miriam";
+    const caption = "1-Dars: Ich heiße Miriam";
     try {
         if (LESSON1_VIDEO_FILE_ID) {
             return await ctx.replyWithVideo(LESSON1_VIDEO_FILE_ID, { caption });
