@@ -5,6 +5,9 @@ const fs = require('fs');
 const bot = new Telegraf('8611408395:AAFLc5nCy5vGR72IQEmX899hITId5IEkZgw');
 const adminGroupId = '-1003356128763';
 
+/** Videoni botga yuboring — javobdagi file_id ni nusxalab shu qatorga qo‘ying (Vercelda disk yo‘q bo‘lsa shu usul ishlaydi). */
+const LESSON1_VIDEO_FILE_ID = '';
+
 const USERS_JSON = path.join(__dirname, '..', 'users.json');
 
 function readRegisteredChatIds() {
@@ -98,18 +101,34 @@ bot.on('contact', async (ctx) => {
     return ctx.reply("Ma'lumotlaringiz qabul qilindi. Markazimiz xizmatlari bilan tanishishingiz mumkin.", mainMenuKeyboard());
 });
 
+bot.on('video', (ctx) => {
+    const fileId = ctx.message.video.file_id;
+    return ctx.reply(
+        "📎 Video qabul qilindi.\n\n" +
+            "Quyidagi file_id ni butunlay tanlab nusxalang va api/bot.js faylida LESSON1_VIDEO_FILE_ID = '...' ichiga yozing:\n\n" +
+            fileId
+    );
+});
+
 // --- VIDEO DARS ---
 bot.hears(BUTTONS.lesson1, async (ctx) => {
     await ctx.reply("Birinchi dars yuklanmoqda, iltimos kuting... ⏳");
+    const caption = "🎥 1-Dars: Ich heiße Miriam";
     try {
-        const videoPath = path.join(__dirname, '..', 'video.mp4'); // Yo'lni aniqroq ko'rsatish
-        if (fs.existsSync(videoPath)) {
-            return await ctx.replyWithVideo({ source: videoPath }, { caption: "🎥 1-Dars: Ich heiße Miriam" });
-        } else {
-            return ctx.reply("Video fayli topilmadi (video.mp4).");
+        if (LESSON1_VIDEO_FILE_ID) {
+            return await ctx.replyWithVideo(LESSON1_VIDEO_FILE_ID, { caption });
         }
-    } catch (e) { 
-        return ctx.reply("Video yuklashda xatolik yuz berdi."); 
+        const videoPath = path.join(__dirname, '..', 'video.mp4');
+        if (fs.existsSync(videoPath)) {
+            return await ctx.replyWithVideo({ source: videoPath }, { caption });
+        }
+        return ctx.reply(
+            "Video hozircha ulangan emas.\n\n" +
+                "1) Dars videosini shu botga yuboring — file_id chiqadi.\n" +
+                "2) O‘sha matnni LESSON1_VIDEO_FILE_ID ga yozing yoki loyihaga video.mp4 qo‘ying."
+        );
+    } catch (e) {
+        return ctx.reply("Video yuklashda xatolik yuz berdi.");
     }
 });
 
