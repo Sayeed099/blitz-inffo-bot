@@ -8,36 +8,6 @@ const adminGroupId = '-1003356128763';
 /** Videoni botga yuboring — javobdagi file_id ni nusxalab shu qatorga qo‘ying (Vercelda disk yo‘q bo‘lsa shu usul ishlaydi). */
 const LESSON1_VIDEO_FILE_ID = '';
 
-const USERS_JSON = path.join(__dirname, '..', 'users.json');
-
-function readRegisteredChatIds() {
-    try {
-        if (!fs.existsSync(USERS_JSON)) return [];
-        const data = JSON.parse(fs.readFileSync(USERS_JSON, 'utf8'));
-        return Array.isArray(data.ids) ? data.ids.map(Number) : [];
-    } catch {
-        return [];
-    }
-}
-
-function writeRegisteredChatIds(ids) {
-    const unique = [...new Set(ids.map(Number))];
-    fs.writeFileSync(USERS_JSON, JSON.stringify({ ids: unique }, null, 2), 'utf8');
-}
-
-function addRegisteredChatId(chatId) {
-    const id = Number(chatId);
-    const ids = readRegisteredChatIds();
-    if (!ids.includes(id)) {
-        ids.push(id);
-        writeRegisteredChatIds(ids);
-    }
-}
-
-function isRegisteredChatId(chatId) {
-    return readRegisteredChatIds().includes(Number(chatId));
-}
-
 const BUTTONS = {
     lesson1: "Nemis tilidan birinchi darsni olish",
     germany: "🇩🇪 Germaniya haqida ma'lumot",
@@ -66,21 +36,14 @@ function mainMenuKeyboard() {
 
 // --- START ---
 bot.start((ctx) => {
-    const chatId = ctx.chat.id;
-    if (isRegisteredChatId(chatId)) {
-        return ctx.reply(
-            "Assalomu alaykum!\nBlitz nemis tili markazi botiga xush kelibsiz.\nAsosiy menyudan foydalanishingiz mumkin:",
-            mainMenuKeyboard()
-        );
-    }
     return ctx.reply(
-        "Assalomu alaykum! \nBlitz nemis tili markazi botiga xush kelibsiz.\nIltimos, xizmatlardan foydalanish uchun telefon raqamingizni yuboring:",
+        "Assalomu alaykum!\nBlitz nemis tili markazi botiga xush kelibsiz.",
         Markup.keyboard([[Markup.button.contactRequest("📱 Telefon raqamni yuborish")]]).resize()
     );
 });
 
-// --- KONTAKT QABUL QILISH ---
-bot.on('contact', async (ctx) => {
+// --- KONTAKT ---
+bot.on("contact", async (ctx) => {
     const contact = ctx.message.contact;
     if (contact.user_id !== ctx.from.id) {
         return ctx.reply("Iltimos, o‘zingizning telefon raqamingizni 📱 tugmasi orqali yuboring.");
@@ -89,16 +52,18 @@ bot.on('contact', async (ctx) => {
     const phone = contact.phone_number;
     const name = ctx.from.first_name;
     const username = ctx.from.username ? `@${ctx.from.username}` : "yo'q";
-    
+
     try {
-        await bot.telegram.sendMessage(adminGroupId, 
-            `🚀 <b>Yangi o'quvchi:</b>\n👤 Ismi: ${name}\n📞 Tel: ${phone}\n🔗 Username: ${username}`, { parse_mode: 'HTML' }
+        await bot.telegram.sendMessage(
+            adminGroupId,
+            `🚀 <b>Yangi o'quvchi:</b>\n👤 Ismi: ${name}\n📞 Tel: ${phone}\n🔗 Username: ${username}`,
+            { parse_mode: "HTML" }
         );
-    } catch (e) { console.error("Admin message fail"); }
+    } catch (e) {
+        console.error("Admin message fail", e);
+    }
 
-    addRegisteredChatId(ctx.chat.id);
-
-    return ctx.reply("Ma'lumotlaringiz qabul qilindi. Markazimiz xizmatlari bilan tanishishingiz mumkin.", mainMenuKeyboard());
+    return ctx.reply("Rahmat, ro'yxatdan o'tdingiz!", mainMenuKeyboard());
 });
 
 function replyLessonVideoFileId(ctx, fileId, howSent) {
