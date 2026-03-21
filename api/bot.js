@@ -1,17 +1,10 @@
-require("dotenv").config();
-const { Telegraf, Markup } = require("telegraf");
-const path = require("node:path");
-const fs = require("node:fs");
+const { Telegraf, Markup } = require('telegraf');
+const path = require('path');
+const fs = require('fs');
 
-const token = process.env.BOT_TOKEN;
-const adminGroupId = process.env.ADMIN_GROUP_ID;
+const bot = new Telegraf('8611408395:AAFLc5nCy5vGR72IQEmX899hITId5IEkZgw');
+const adminGroupId = '-1003356128763';
 
-if (!token) throw new Error("BOT_TOKEN is missing. Set it in .env / Vercel env vars.");
-if (!adminGroupId) throw new Error("ADMIN_GROUP_ID is missing. Set it in .env / Vercel env vars.");
-
-const bot = new Telegraf(token);
-
-// Asosiy tugmalar nomlari
 const BUTTONS = {
     lesson1: "Nemis tilidan birinchi darsni olish 🎥",
     germany: "🇩🇪 Germaniya haqida ma'lumot",
@@ -29,29 +22,24 @@ const GERMANY = {
     sprachkurs: "6️⃣ TIL KURSI",
 };
 
-// 1. START - Kontakt so'rash
+// --- START ---
 bot.start((ctx) => {
     ctx.reply("Assalomu alaykum! Blitz nemis tili markazi botiga xush kelibsiz.\nIltimos, xizmatlardan foydalanish uchun telefon raqamingizni yuboring:", 
-        Markup.keyboard([
-            [Markup.button.contactRequest("📱 Telefon raqamni yuborish")]
-        ]).resize()
+        Markup.keyboard([[Markup.button.contactRequest("📱 Telefon raqamni yuborish")]]).resize()
     );
 });
 
-// 2. Kontaktni qabul qilish va Adminga yuborish
+// --- KONTAKT VA ADMINGA YUBORISH ---
 bot.on('contact', async (ctx) => {
     const phone = ctx.message.contact.phone_number;
     const name = ctx.from.first_name;
-    const username = ctx.from.username ? `@${ctx.from.username}` : "Mavjud emas";
+    const username = ctx.from.username ? `@${ctx.from.username}` : "yo'q";
     
-    // Adminga hisobot
     await bot.telegram.sendMessage(adminGroupId, 
-        `🚀 <b>Yangi o'quvchi:</b>\n\n👤 <b>Ismi:</b> ${name}\n📞 <b>Tel:</b> ${phone}\n🔗 <b>Username:</b> ${username}`, 
-        { parse_mode: 'HTML' }
+        `🚀 <b>Yangi o'quvchi:</b>\n👤 Ismi: ${name}\n📞 Tel: ${phone}\n🔗 Username: ${username}`, { parse_mode: 'HTML' }
     );
     
-    // Asosiy menyuni ochish
-    ctx.reply("Rahmat! Ma'lumotlaringiz qabul qilindi. Markazimiz xizmatlari bilan tanishishingiz mumkin.", 
+    ctx.reply("Ma'lumotlaringiz qabul qilindi. Markazimiz xizmatlari bilan tanishishingiz mumkin.", 
         Markup.keyboard([
             [BUTTONS.lesson1],
             [BUTTONS.germany, BUTTONS.center],
@@ -60,26 +48,22 @@ bot.on('contact', async (ctx) => {
     );
 });
 
-// 3. Birinchi dars (Video)
+// --- VIDEO DARS ---
 bot.hears(BUTTONS.lesson1, async (ctx) => {
     await ctx.reply("Birinchi dars yuklanmoqda, iltimos kuting... ⏳");
     try {
-        const localPath = path.join(process.cwd(), "video.mp4");
-        if (fs.existsSync(localPath)) {
-            await ctx.replyWithVideo({ source: localPath }, {
-                caption: "🎥 1-Dars: Ich heiße Miriam\n\nMuvaffaqiyatli o'rganish tilaymiz!"
-            });
+        const videoPath = path.join(process.cwd(), "video.mp4");
+        if (fs.existsSync(videoPath)) {
+            await ctx.replyWithVideo({ source: videoPath }, { caption: "🎥 1-Dars: Ich heiße Miriam" });
         } else {
-            ctx.reply("Video fayli topilmadi (video.mp4). Iltimos, administratorga murojaat qiling.");
+            ctx.reply("Video fayli topilmadi (video.mp4).");
         }
-    } catch (e) {
-        ctx.reply("Video yuklashda xatolik yuz berdi.");
-    }
+    } catch (e) { ctx.reply("Xatolik yuz berdi."); }
 });
 
-// 4. Germaniya menyusi
+// --- GERMANIYA MENYUSI ---
 bot.hears(BUTTONS.germany, (ctx) => {
-    ctx.reply("Viza turlaridan birini tanlang:", 
+    ctx.reply("Kerakli bo'limni tanlang:", 
         Markup.keyboard([
             [GERMANY.workVisa, GERMANY.ausbildung],
             [GERMANY.studienkolleg, GERMANY.bachelor],
@@ -89,48 +73,40 @@ bot.hears(BUTTONS.germany, (ctx) => {
     );
 });
 
-// 5. Orqaga qaytish
-bot.hears(BUTTONS.back, (ctx) => {
-    ctx.reply("Asosiy menyu:", 
-        Markup.keyboard([
-            [BUTTONS.lesson1],
-            [BUTTONS.germany, BUTTONS.center],
-            [BUTTONS.addresses]
-        ]).resize()
-    );
-});
+// --- VIZA MA'LUMOTLARI (SIZ BERGAN MATNLAR) ---
 
-// 6. Germaniya Viza ma'lumotlari
 bot.hears(GERMANY.workVisa, (ctx) => {
-    ctx.reply("<b>Ishchi viza (Work Visa)</b>\n\n<b>Kimlar uchun:</b>\n• Diplomga ega bo'lganlar (kollej yoki bakalavr)\n• Mutaxassisligi bo'yicha ishlashni istaganlar\n\n<b>Talablar:</b>\n• Diplom: kollej (3 yillik) yoki bakalavr\n• Til sertifikati: Goethe / Telc / OSD\n• Yosh: 20-40 yosh\n• Harajat: 1 500$ - 2 500$", { parse_mode: 'HTML' });
+    ctx.reply("<b>1️⃣ ISHCHI VIZA (Work Visa)</b>\n\n<b>👤 Kimlar uchun?</b>\n– Diplomga ega bo‘lganlar\n– Mutaxassisligi bo‘yicha ishlashni istaganlar\n\n<b>✅ Talablar:</b>\nDiplom: kollej yoki bakalavr\nTil sertifikati: Goethe / Telc / ÖSD\nYosh: 20–40 yosh\n\n<b>💰 Harajat:</b> 1 500$ – 2 500$\n\n<b>🚀 Imkoniyatlar:</b> Qonuniy ishlash, oilani chaqirish, 3–5 yilda doimiy yashash.", { parse_mode: 'HTML' });
 });
 
 bot.hears(GERMANY.ausbildung, (ctx) => {
-    ctx.reply("<b>Ausbildung (Kasbiy ta'lim)</b>\n\n<b>Kimlar uchun:</b>\n• 11 yillik ta'lim bitirganlar\n• Universitet o'qimasdan kasb egallamoqchilar\n\n<b>Talablar:</b>\n• 11 yillik ta'lim hujjati\n• Nemis tili B1\n• Yosh: odatda 30 yoshgacha\n• Harajat: 1 500$ - 2 000$", { parse_mode: 'HTML' });
+    ctx.reply("<b>2️⃣ AUSBILDUNG (Kasbiy ta’lim)</b>\n\n<b>👤 Kimlar uchun?</b>\n– 11 yillik ta’lim bitirganlar\n– O‘qish bilan birga maosh olishni xohlaganlar\n\n<b>✅ Talablar:</b>\nTil: Nemis tili B1\nYosh: odatda 30 yoshgacha\n\n<b>💰 Harajat:</b> 1 500$ – 2 000$\n\n<b>🚀 Imkoniyatlar:</b> O‘qish davomida maosh, tugatgach ishga qolish.", { parse_mode: 'HTML' });
 });
 
 bot.hears(GERMANY.studienkolleg, (ctx) => {
-    ctx.reply("<b>Studienkolleg (Tayyorlov bosqichi)</b>\n\n<b>Kimlar uchun:</b>\n• 11 yillik maktab bitirganlar\n\n<b>Talablar:</b>\n• Nemis tili B1-B2\n• Kirish imtihoni va moliyaviy kafolat", { parse_mode: 'HTML' });
+    ctx.reply("<b>3️⃣ STUDIENKOLLEG (Tayyorlov)</b>\n\n<b>✅ Talablar:</b>\nNemis tili B1–B2, Kirish imtihoni, Moliyaviy kafolat.\n\n<b>🚀 Imkoniyatlar:</b> 1 yillik tayyorlovdan so'ng universitetga kirish huquqi.", { parse_mode: 'HTML' });
 });
 
 bot.hears(GERMANY.bachelor, (ctx) => {
-    ctx.reply("<b>Bakalavr (Bachelor)</b>\n\n<b>Talablar:</b>\n• 12 yillik ta'lim\n• Nemis tili C1 (yoki B2)\n• Harajat: Oyiga 1 091 euro bloklangan hisob", { parse_mode: 'HTML' });
+    ctx.reply("<b>4️⃣ BAKALAVR (Bachelor)</b>\n\n<b>✅ Talablar:</b>\n12 yillik ta’lim, Nemis tili C1.\n\n<b>💰 Harajat:</b> Oyiga 1 091 € bloklangan hisob.\n\n<b>🚀 Imkoniyatlar:</b> Haftasiga 20 soat ishlash, bitirgach 18 oy ish qidirish vizasi.", { parse_mode: 'HTML' });
 });
 
 bot.hears(GERMANY.master, (ctx) => {
-    ctx.reply("<b>Magistr (Master)</b>\n\n<b>Talablar:</b>\n• Tan olingan bakalavr diplomi\n• Nemis tili C1 yoki Ingliz tili (IELTS 6.5+)", { parse_mode: 'HTML' });
+    ctx.reply("<b>5️⃣ MAGISTR (Master)</b>\n\n<b>✅ Talablar:</b>\nBakalavr diplomi, Nemis tili C1 yoki Ingliz tili (IELTS 6.5).\n\n<b>🚀 Imkoniyatlar:</b> Yuqori akademik daraja va oson ish topish.", { parse_mode: 'HTML' });
 });
 
 bot.hears(GERMANY.sprachkurs, (ctx) => {
-    ctx.reply("<b>Til kursi (Sprachkurs visasi)</b>\n\n<b>Talablar:</b>\n• Nemis tili kamida A2 daraja\n• Moliyaviy kafolat (Bloklangan hisob)", { parse_mode: 'HTML' });
+    ctx.reply("<b>6️⃣ TIL KURSI (Sprachkurs)</b>\n\n<b>✅ Talablar:</b>\nKamida A2 daraja, Til kursiga qabul, Moliyaviy kafolat.\n\n<b>🚀 Imkoniyatlar:</b> Germaniyada tilni tez o'rganish va keyin Ausbildungga o'tish.", { parse_mode: 'HTML' });
 });
 
-// Qolgan tugmalar
-bot.hears(BUTTONS.center, (ctx) => ctx.reply("🏢 Blitz Nemis Tili Markazi — Germaniyada o'qish va ishlash bo'yicha sizning ishonchli hamkoringiz!"));
-bot.hears(BUTTONS.addresses, (ctx) => ctx.reply("📍 Bizning manzillarimiz:\n1. Toshkent shahri...\n2. Farg'ona filiali..."));
+bot.hears(BUTTONS.back, (ctx) => {
+    ctx.reply("Asosiy menyu:", Markup.keyboard([[BUTTONS.lesson1], [BUTTONS.germany, BUTTONS.center], [BUTTONS.addresses]]).resize());
+});
 
-// Vercel uchun eksport
+bot.hears(BUTTONS.center, (ctx) => ctx.reply("🏢 <b>Blitz Nemis Tili Markazi</b>\nGermaniyada muvaffaqiyatli karyera qurishingiz uchun ishonchli ko'prik!", { parse_mode: 'HTML' }));
+bot.hears(BUTTONS.addresses, (ctx) => ctx.reply("📍 <b>Manzilimiz:</b> Toshkent shahri, Blitz markazi.\n📞 Aloqa: +998...", { parse_mode: 'HTML' }));
+
 module.exports = async (req, res) => {
-    // Telegraf webhook handler: parses request body itself (works on Vercel)
-    return bot.webhookCallback("/api/bot")(req, res);
+    if (req.method === 'POST') await bot.handleUpdate(req.body);
+    res.status(200).send('OK');
 };
