@@ -53,18 +53,18 @@ function addRegisteredChatId(chatId) {
 const BUTTONS = {
     lesson1: "Nemis tilidan birinchi darsni olish 🎥",
     germany: "🇩🇪 Germaniya haqida ma'lumot",
-    center: "🏢 Blitz haqida",
+    center: "Blitz nemis tili markazi haqida",
     addresses: "📍 Bizning manzillar",
     back: "⬅️ Orqaga"
 };
 
 const GERMANY = {
-    workVisa: "1️⃣ ISHCHI VIZA",
-    ausbildung: "2️⃣ AUSBILDUNG",
-    studienkolleg: "3️⃣ STUDIENKOLLEG",
-    bachelor: "4️⃣ BAKALAVR",
-    master: "5️⃣ MAGISTR",
-    sprachkurs: "6️⃣ TIL KURSI",
+    workVisa: "1️⃣ Ishchi visa",
+    ausbildung: "2️⃣ Ausbilding",
+    studienkolleg: "3️⃣ Studienkolleg",
+    bachelor: "4️⃣ Bakalavr",
+    master: "5️⃣ Magistr",
+    sprachkurs: "6️⃣ Til kursi",
 };
 
 /** Telegram klaviaturasi ba'zan ma'lumot ichidagi ' ni Unicode (') qilib yuboradi; shuningdek eski deploy tugmalari */
