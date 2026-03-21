@@ -5,6 +5,36 @@ const fs = require('fs');
 const bot = new Telegraf('8611408395:AAFLc5nCy5vGR72IQEmX899hITId5IEkZgw');
 const adminGroupId = '-1003356128763';
 
+const USERS_JSON = path.join(__dirname, '..', 'users.json');
+
+function readRegisteredChatIds() {
+    try {
+        if (!fs.existsSync(USERS_JSON)) return [];
+        const data = JSON.parse(fs.readFileSync(USERS_JSON, 'utf8'));
+        return Array.isArray(data.ids) ? data.ids.map(Number) : [];
+    } catch {
+        return [];
+    }
+}
+
+function writeRegisteredChatIds(ids) {
+    const unique = [...new Set(ids.map(Number))];
+    fs.writeFileSync(USERS_JSON, JSON.stringify({ ids: unique }, null, 2), 'utf8');
+}
+
+function addRegisteredChatId(chatId) {
+    const id = Number(chatId);
+    const ids = readRegisteredChatIds();
+    if (!ids.includes(id)) {
+        ids.push(id);
+        writeRegisteredChatIds(ids);
+    }
+}
+
+function isRegisteredChatId(chatId) {
+    return readRegisteredChatIds().includes(Number(chatId));
+}
+
 const BUTTONS = {
     lesson1: "Nemis tilidan birinchi darsni olish",
     germany: "🇩🇪 Germaniya haqida ma'lumot",
@@ -22,16 +52,38 @@ const GERMANY = {
     sprachkurs: "6️⃣ TIL KURSI",
 };
 
+function mainMenuKeyboard() {
+    return Markup.keyboard([
+        [BUTTONS.lesson1],
+        [BUTTONS.germany],
+        [BUTTONS.center],
+        [BUTTONS.addresses]
+    ]).resize();
+}
+
 // --- START ---
 bot.start((ctx) => {
-    return ctx.reply("Assalomu alaykum ! \nBlitz nemis tili markazi botiga xush kelibsiz.\nIltimos, xizmatlardan foydalanish uchun telefon raqamingizni yuboring:", 
+    const chatId = ctx.chat.id;
+    if (isRegisteredChatId(chatId)) {
+        return ctx.reply(
+            "Assalomu alaykum!\nBlitz nemis tili markazi botiga xush kelibsiz.\nAsosiy menyudan foydalanishingiz mumkin:",
+            mainMenuKeyboard()
+        );
+    }
+    return ctx.reply(
+        "Assalomu alaykum! \nBlitz nemis tili markazi botiga xush kelibsiz.\nIltimos, xizmatlardan foydalanish uchun telefon raqamingizni yuboring:",
         Markup.keyboard([[Markup.button.contactRequest("📱 Telefon raqamni yuborish")]]).resize()
     );
 });
 
 // --- KONTAKT QABUL QILISH ---
 bot.on('contact', async (ctx) => {
-    const phone = ctx.message.contact.phone_number;
+    const contact = ctx.message.contact;
+    if (contact.user_id !== ctx.from.id) {
+        return ctx.reply("Iltimos, o‘zingizning telefon raqamingizni 📱 tugmasi orqali yuboring.");
+    }
+
+    const phone = contact.phone_number;
     const name = ctx.from.first_name;
     const username = ctx.from.username ? `@${ctx.from.username}` : "yo'q";
     
@@ -40,15 +92,10 @@ bot.on('contact', async (ctx) => {
             `🚀 <b>Yangi o'quvchi:</b>\n👤 Ismi: ${name}\n📞 Tel: ${phone}\n🔗 Username: ${username}`, { parse_mode: 'HTML' }
         );
     } catch (e) { console.error("Admin message fail"); }
-    
-    return ctx.reply("Ma'lumotlaringiz qabul qilindi. Markazimiz xizmatlari bilan tanishishingiz mumkin.", 
-        Markup.keyboard([
-            [BUTTONS.lesson1],
-            [BUTTONS.germany],
-            [BUTTONS.center],
-            [BUTTONS.addresses]
-        ]).resize()
-    );
+
+    addRegisteredChatId(ctx.chat.id);
+
+    return ctx.reply("Ma'lumotlaringiz qabul qilindi. Markazimiz xizmatlari bilan tanishishingiz mumkin.", mainMenuKeyboard());
 });
 
 // --- VIDEO DARS ---
@@ -86,7 +133,7 @@ bot.hears(GERMANY.master, (ctx) => ctx.reply("<b>5️⃣ MAGISTR (Master)</b>\n\
 bot.hears(GERMANY.sprachkurs, (ctx) => ctx.reply("<b>6️⃣ TIL KURSI (Sprachkurs)</b>\n\n<b>✅ Talablar:</b>\nKamida A2 daraja, Til kursiga qabul, Moliyaviy kafolat.\n\n<b>🚀 Imkoniyatlar:</b> Germaniyada tilni tez o'rganish va keyin Ausbildungga o'tish.", { parse_mode: 'HTML' }));
 
 bot.hears(BUTTONS.back, (ctx) => {
-    return ctx.reply("Asosiy menyu:", Markup.keyboard([[BUTTONS.lesson1], [BUTTONS.germany], [BUTTONS.center], [BUTTONS.addresses]]).resize());
+    return ctx.reply("Asosiy menyu:", mainMenuKeyboard());
 });
 
 bot.hears(BUTTONS.center, (ctx) => ctx.reply("🏢 <b>Blitz Nemis Tili Markazi</b>\nGermaniyada muvaffaqiyatli karyera qurishingiz uchun ishonchli ko'prik!", { parse_mode: 'HTML' }));
