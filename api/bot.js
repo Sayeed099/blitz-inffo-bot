@@ -51,20 +51,20 @@ function addRegisteredChatId(chatId) {
 }
 
 const BUTTONS = {
-    lesson1: "Nemis tilidan birinchi darsni olish",
+    lesson1: "Nemis tilidan birinchi darsni olish 🎥",
     germany: "🇩🇪 Germaniya haqida ma'lumot",
-    center: "Blitz nemis tili markazi haqida",
+    center: "🏢 Blitz haqida",
     addresses: "📍 Bizning manzillar",
     back: "⬅️ Orqaga"
 };
 
 const GERMANY = {
-    workVisa: "1️⃣ Ishchi visa",
-    ausbildung: "2️⃣ Ausbildung",
-    studienkolleg: "3️⃣ Studienkolleg",
-    bachelor: "4️⃣ Bakalavr",
-    master: "5️⃣ Magistartura",
-    sprachkurs: "6️⃣ Til kursi",
+    workVisa: "1️⃣ ISHCHI VIZA",
+    ausbildung: "2️⃣ AUSBILDUNG",
+    studienkolleg: "3️⃣ STUDIENKOLLEG",
+    bachelor: "4️⃣ BAKALAVR",
+    master: "5️⃣ MAGISTR",
+    sprachkurs: "6️⃣ TIL KURSI",
 };
 
 /** Telegram klaviaturasi ba'zan ma'lumot ichidagi ' ni Unicode (') qilib yuboradi; shuningdek eski deploy tugmalari */
@@ -108,8 +108,7 @@ const GERMANY_DETAIL_HTML = {
 function mainMenuKeyboard() {
     return Markup.keyboard([
         [BUTTONS.lesson1],
-        [BUTTONS.germany],
-        [BUTTONS.center],
+        [BUTTONS.germany, BUTTONS.center],
         [BUTTONS.addresses]
     ]).resize();
 }
