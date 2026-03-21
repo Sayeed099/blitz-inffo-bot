@@ -78,12 +78,12 @@ const GERMANY_OPEN_TRIGGERS = [
  * Raqam tugmalari: klientlar turli keycap ketma-ketligi yuboradi; .{0,18} oralig'i emoji + bo'sh joyni qamrab oladi.
  */
 const GERMANY_RX = {
-    workVisa: /^1.{0,18}(?:Ishchi visa|ISHCHI VIZA)\s*$/iu,
-    ausbildung: /^2.{0,18}(?:Ausbildung|AUSBILDUNG|Ausb)\s*$/iu,
-    studienkolleg: /^3.{0,18}(?:Studienkolleg|STUDIENKOLLEG)\s*$/iu,
-    bachelor: /^4.{0,18}(?:Bakalavr|BAKALAVR)\s*$/iu,
-    master: /^5.{0,18}(?:Magistartura|MAGISTR)\s*$/iu,
-    sprachkurs: /^6.{0,18}(?:Til kursi|TIL KURSI)\s*$/iu,
+    workVisa: /^1.{0,28}(?:Ishchi visa|ISHCHI VIZA)\s*$/iu,
+    ausbildung: /^2.{0,28}(?:Ausbildung|AUSBILDUNG|Ausb)\s*$/iu,
+    studienkolleg: /^3.{0,28}(?:Studienkolleg|STUDIENKOLLEG)\s*$/iu,
+    bachelor: /^4.{0,28}(?:Bakalavr|BAKALAVR)\s*$/iu,
+    master: /^5.{0,28}(?:Magistartura|MAGISTR|Magistr)\s*$/iu,
+    sprachkurs: /^6.{0,28}(?:Til kursi|TIL KURSI)\s*$/iu,
 };
 
 function replyGermanyHtml(ctx, html) {
@@ -363,55 +363,6 @@ function openGermanySubmenu(ctx) {
 
 bot.hears(GERMANY_OPEN_TRIGGERS, openGermanySubmenu);
 
-bot.hears(
-    [GERMANY.workVisa, "1️⃣ Ishchi visa", GERMANY_RX.workVisa],
-    (ctx) =>
-        ctx.reply(
-            "<b>1️⃣ Ishchi visa (Work Visa)</b>\n\n<b>👤 Kimlar uchun?</b>\n– Diplomga ega bo‘lganlar\n– Mutaxassisligi bo‘yicha ishlashni istaganlar\n\n<b>✅ Talablar:</b>\nDiplom: kollej yoki bakalavr\nTil sertifikati: Goethe / Telc / ÖSD\nYosh: 20–40 yosh\n\n<b>💰 Harajat:</b> 1 500$ – 2 500$\n\n<b>🚀 Imkoniyatlar:</b> Qonuniy ishlash, oilani chaqirish, 3–5 yilda doimiy yashash.\n\n<b>Murojaat uchun : @Hoff_admin.",
-            { parse_mode: "HTML" }
-        )
-);
-bot.hears(
-    [GERMANY.ausbildung, "2️⃣ Ausbilding", GERMANY_RX.ausbildung],
-    (ctx) =>
-        ctx.reply(
-            "<b>2️⃣ Ausbildung (Kasbiy ta’lim)</b>\n\n<b>👤 Kimlar uchun?</b>\n– 11 yillik ta’lim bitirganlar\n– O‘qish bilan birga maosh olishni xohlaganlar\n\n<b>✅ Talablar:</b>\nTil: Nemis tili B1\nYosh: odatda 30 yoshgacha\n\n<b>💰 Harajat:</b> 1 500$ – 2 000$\n\n<b>🚀 Imkoniyatlar:</b> O‘qish davomida maosh, tugatgach ishga qolish.\n\n<b>Murojaat uchun : @Hoff_admin.",
-            { parse_mode: "HTML" }
-        )
-);
-bot.hears(
-    [GERMANY.studienkolleg, "3️⃣ Studienkolleg", GERMANY_RX.studienkolleg],
-    (ctx) =>
-        ctx.reply(
-            "<b>3️⃣ Studienkolleg (Tayyorlov)</b>\n\n<b>✅ Talablar:</b>\nNemis tili B1–B2, Kirish imtihoni, Moliyaviy kafolat.\n\n<b>🚀 Imkoniyatlar:</b> 1 yillik tayyorlovdan so'ng universitetga kirish huquqi.\n\n<b>Murojaat uchun : @Hoff_admin.",
-            { parse_mode: "HTML" }
-        )
-);
-bot.hears(
-    [GERMANY.bachelor, "4️⃣ Bakalavr", GERMANY_RX.bachelor],
-    (ctx) =>
-        ctx.reply(
-            "<b>4️⃣ Bakalavr (Bachelor)</b>\n\n<b>✅ Talablar:</b>\n12 yillik ta’lim, Nemis tili C1.\n\n<b>💰 Harajat:</b> Oyiga 1 091 € bloklangan hisob.\n\n<b>🚀 Imkoniyatlar:</b> Haftasiga 20 soat ishlash, bitirgach 18 oy ish qidirish vizasi.\n\n<b>Murojaat uchun : @Hoff_admin.",
-            { parse_mode: "HTML" }
-        )
-);
-bot.hears(
-    [GERMANY.master, "5️⃣ Magistr", GERMANY_RX.master],
-    (ctx) =>
-        ctx.reply(
-            "<b>5️⃣ Magistr (Master)</b>\n\n<b>✅ Talablar:</b>\nBakalavr diplomi, Nemis tili C1 yoki Ingliz tili (IELTS 6.5).\n\n<b>🚀 Imkoniyatlar:</b> Yuqori akademik daraja va oson ish topish.\n\n<b>Murojaat uchun : @Hoff_admin.",
-            { parse_mode: "HTML" }
-        )
-);
-bot.hears(
-    [GERMANY.sprachkurs, "6️⃣ Til kursi", GERMANY_RX.sprachkurs],
-    (ctx) =>
-        ctx.reply(
-            "<b>6️⃣ Til kursi (Sprachkurs)</b>\n\n<b>✅ Talablar:</b>\nKamida A2 daraja, Til kursiga qabul, Moliyaviy kafolat.\n\n<b>🚀 Imkoniyatlar:</b> Germaniyada tilni tez o'rganish va keyin Ausbildungga o'tish.\n\n<b>Murojaat uchun : @Hoff_admin.",
-            { parse_mode: "HTML" }
-        )
-);
-
 bot.hears(BUTTONS.back, (ctx) => {
     return ctx.reply("Asosiy menyu:", mainMenuKeyboard());
 });
@@ -438,6 +389,19 @@ bot.hears(BRANCH_PICKER_BACK, (ctx) => {
 
 BRANCH_MENU_LABELS.forEach((label, idx) => {
     bot.hears(label, (ctx) => replyBranchCard(ctx, BRANCHES[idx]));
+});
+
+/** hears zanjirida emoji mos kelmasa ham ishlashi uchun (oxirgi use — ichki next chaqirilgach ishlaydi) */
+bot.use((ctx, next) => {
+    const t = ctx.message?.text;
+    if (typeof t !== "string") return next();
+    if (GERMANY_RX.workVisa.test(t)) return replyGermanyHtml(ctx, GERMANY_DETAIL_HTML.workVisa);
+    if (GERMANY_RX.ausbildung.test(t)) return replyGermanyHtml(ctx, GERMANY_DETAIL_HTML.ausbildung);
+    if (GERMANY_RX.studienkolleg.test(t)) return replyGermanyHtml(ctx, GERMANY_DETAIL_HTML.studienkolleg);
+    if (GERMANY_RX.bachelor.test(t)) return replyGermanyHtml(ctx, GERMANY_DETAIL_HTML.bachelor);
+    if (GERMANY_RX.master.test(t)) return replyGermanyHtml(ctx, GERMANY_DETAIL_HTML.master);
+    if (GERMANY_RX.sprachkurs.test(t)) return replyGermanyHtml(ctx, GERMANY_DETAIL_HTML.sprachkurs);
+    return next();
 });
 
 // --- VERCEL EXPORT ---
