@@ -52,7 +52,7 @@ function addRegisteredChatId(chatId) {
 
 const BUTTONS = {
     lesson1: "Nemis tilidan birinchi darsni olish",
-    germany: "🇩🇪 Germaniya haqida ma'lumot",
+    germany: "Germaniya haqida ma'lumot",
     center: "Blitz nemis tili markazi haqida",
     addresses: "Bizning manzillar",
     back: "⬅️ Orqaga"
