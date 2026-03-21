@@ -101,13 +101,44 @@ bot.on('contact', async (ctx) => {
     return ctx.reply("Ma'lumotlaringiz qabul qilindi. Markazimiz xizmatlari bilan tanishishingiz mumkin.", mainMenuKeyboard());
 });
 
-bot.on('video', (ctx) => {
-    const fileId = ctx.message.video.file_id;
-    return ctx.reply(
-        "📎 Video qabul qilindi.\n\n" +
-            "Quyidagi file_id ni butunlay tanlab nusxalang va api/bot.js faylida LESSON1_VIDEO_FILE_ID = '...' ichiga yozing:\n\n" +
-            fileId
-    );
+function replyLessonVideoFileId(ctx, fileId, howSent) {
+    const hint =
+        howSent === "document"
+            ? "\n\n(iPhone/Androidda «Video» sifatida emas, «Fayl» bilan yuborilgan — baribir file_id ishlaydi.)"
+            : "";
+    return ctx
+        .reply(
+            "📎 Video qabul qilindi." +
+                hint +
+                "\n\nQuyidagi file_id ni butunlay tanlab nusxalang va api/bot.js ichida LESSON1_VIDEO_FILE_ID = '...' ga yozing:\n\n" +
+                fileId
+        )
+        .catch((err) => console.error("file_id javobi yuborilmadi:", err));
+}
+
+// Oddiy video xabari (kamera / «Video» tugmasi)
+bot.on("video", (ctx) => {
+    return replyLessonVideoFileId(ctx, ctx.message.video.file_id, "video");
+});
+
+// Ko‘pchilik telefonlarda fayl sifatida yuboriladi — bu yerda message.video bo‘lmaydi
+bot.on("document", (ctx) => {
+    const doc = ctx.message.document;
+    const mime = doc.mime_type || "";
+    if (!mime.startsWith("video/")) return;
+    return replyLessonVideoFileId(ctx, doc.file_id, "document");
+});
+
+// Dumaloq video — file_id boshqa tur; dars uchun imkon qadar oddiy video yuboring
+bot.on("video_note", (ctx) => {
+    const id = ctx.message.video_note.file_id;
+    return ctx
+        .reply(
+            "📎 Dumaloq video (video note) file_id:\n\n" +
+                id +
+                "\n\n⚠️ Dars menyusida ko‘rinishi uchun odatda oddiy video (yoki .mp4 fayl) yuborilgan file_id ishlatiladi."
+        )
+        .catch((err) => console.error("file_id javobi yuborilmadi:", err));
 });
 
 // --- VIDEO DARS ---
