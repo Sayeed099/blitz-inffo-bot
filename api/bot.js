@@ -50,12 +50,19 @@ const BUTTONS = {
 
 const GERMANY = {
     workVisa: "1️⃣ Ishchi visa",
-    ausbildung: "2️⃣ Ausb",
+    ausbildung: "2️⃣ Ausbildung",
     studienkolleg: "3️⃣ Studienkolleg",
     bachelor: "4️⃣ Bakalavr",
     master: "5️⃣ Magistartura",
     sprachkurs: "6️⃣ Til kursi",
 };
+
+/** Telegram klaviaturasi ba'zan ma'lumot ichidagi ' ni Unicode (') qilib yuboradi; shuningdek eski deploy tugmalari */
+const GERMANY_OPEN_TRIGGERS = [
+    BUTTONS.germany,
+    "🇩🇪 Germaniya haqida ma\u2019lumot",
+    /^🇩🇪\s*Germaniya haqida ma['\u2019\u02BC]lumot$/u,
+];
 
 function mainMenuKeyboard() {
     return Markup.keyboard([
@@ -211,10 +218,10 @@ function formatBranchCaptionHtml(b) {
     const head = `📍 <b>${escapeHtml(titleDisplay)}</b>`;
     const quote = `<blockquote>${addr}</blockquote>`;
     const maps =
-        `🌍 <a href="${b.yandexUrl}">Yandex Map</a>\n` +
+        `🌍 <a href="${b.yandexUrl}">Yandex Map</a>\n\n` +
         `🌍 <a href="${b.googleUrl}">Google Map</a>`;
     let body = `🚇 ${dirP}: ${dirT}`;
-    if (b.bus) body += `\n🚌 Bus: ${escapeHtml(b.bus)}`;
+    if (b.bus) body += `\n\n🚌 Bus: ${escapeHtml(b.bus)}`;
     const phoneLine = `☎️ ${ph}`;
     const tgLine = `📩 <a href="${b.telegramUrl}">Telegram</a>`;
 
@@ -236,7 +243,7 @@ async function replyBranchCard(ctx, b) {
         console.error("Filial rasm/xabar yuborishda xato", e);
         return ctx.reply(caption, { parse_mode: "HTML" });
     }
-r}
+}
 
 // --- START ---
 bot.start((ctx) => {
@@ -301,23 +308,68 @@ bot.hears(BUTTONS.lesson1, async (ctx) => {
 });
 
 // --- GERMANIYA MENYULARI (MATNLAR) ---
-bot.hears(BUTTONS.germany, (ctx) => {
-    return ctx.reply("Kerakli bo'limni tanlang:", 
+function openGermanySubmenu(ctx) {
+    return ctx.reply(
+        "Kerakli bo'limni tanlang:",
         Markup.keyboard([
             [GERMANY.workVisa, GERMANY.ausbildung],
             [GERMANY.studienkolleg, GERMANY.bachelor],
             [GERMANY.master, GERMANY.sprachkurs],
-            [BUTTONS.back]
+            [BUTTONS.back],
         ]).resize()
     );
-});
+}
 
-bot.hears(GERMANY.workVisa, (ctx) => ctx.reply("<b>1️⃣ Ishchi visa (Work Visa)</b>\n\n<b>👤 Kimlar uchun?</b>\n– Diplomga ega bo‘lganlar\n– Mutaxassisligi bo‘yicha ishlashni istaganlar\n\n<b>✅ Talablar:</b>\nDiplom: kollej yoki bakalavr\nTil sertifikati: Goethe / Telc / ÖSD\nYosh: 20–40 yosh\n\n<b>💰 Harajat:</b> 1 500$ – 2 500$\n\n<b>🚀 Imkoniyatlar:</b> Qonuniy ishlash, oilani chaqirish, 3–5 yilda doimiy yashash.\n\n<b>Murojaat uchun : @Hoff_admin.", { parse_mode: 'HTML' }));
-bot.hears(GERMANY.ausbildung, (ctx) => ctx.reply("<b>2️⃣ Ausbildung (Kasbiy ta’lim)</b>\n\n<b>👤 Kimlar uchun?</b>\n– 11 yillik ta’lim bitirganlar\n– O‘qish bilan birga maosh olishni xohlaganlar\n\n<b>✅ Talablar:</b>\nTil: Nemis tili B1\nYosh: odatda 30 yoshgacha\n\n<b>💰 Harajat:</b> 1 500$ – 2 000$\n\n<b>🚀 Imkoniyatlar:</b> O‘qish davomida maosh, tugatgach ishga qolish.\n\n<b>Murojaat uchun : @Hoff_admin.", { parse_mode: 'HTML' }));
-bot.hears(GERMANY.studienkolleg, (ctx) => ctx.reply("<b>3️⃣ Studienkolleg (Tayyorlov)</b>\n\n<b>✅ Talablar:</b>\nNemis tili B1–B2, Kirish imtihoni, Moliyaviy kafolat.\n\n<b>🚀 Imkoniyatlar:</b> 1 yillik tayyorlovdan so'ng universitetga kirish huquqi.\n\n<b>Murojaat uchun : @Hoff_admin.", { parse_mode: 'HTML' }));
-bot.hears(GERMANY.bachelor, (ctx) => ctx.reply("<b>4️⃣ Bakalavr (Bachelor)</b>\n\n<b>✅ Talablar:</b>\n12 yillik ta’lim, Nemis tili C1.\n\n<b>💰 Harajat:</b> Oyiga 1 091 € bloklangan hisob.\n\n<b>🚀 Imkoniyatlar:</b> Haftasiga 20 soat ishlash, bitirgach 18 oy ish qidirish vizasi.\n\n<b>Murojaat uchun : @Hoff_admin.", { parse_mode: 'HTML' }));
-bot.hears(GERMANY.master, (ctx) => ctx.reply("<b>5️⃣ Magistr (Master)</b>\n\n<b>✅ Talablar:</b>\nBakalavr diplomi, Nemis tili C1 yoki Ingliz tili (IELTS 6.5).\n\n<b>🚀 Imkoniyatlar:</b> Yuqori akademik daraja va oson ish topish.\n\n<b>Murojaat uchun : @Hoff_admin.", { parse_mode: 'HTML' }));
-bot.hears(GERMANY.sprachkurs, (ctx) => ctx.reply("<b>6️⃣ Til kursi (Sprachkurs)</b>\n\n<b>✅ Talablar:</b>\nKamida A2 daraja, Til kursiga qabul, Moliyaviy kafolat.\n\n<b>🚀 Imkoniyatlar:</b> Germaniyada tilni tez o'rganish va keyin Ausbildungga o'tish.\n\n<b>Murojaat uchun : @Hoff_admin.", { parse_mode: 'HTML' }));
+bot.hears(GERMANY_OPEN_TRIGGERS, openGermanySubmenu);
+
+bot.hears(
+    [GERMANY.workVisa, "1️⃣ ISHCHI VIZA"],
+    (ctx) =>
+        ctx.reply(
+            "<b>1️⃣ Ishchi visa (Work Visa)</b>\n\n<b>👤 Kimlar uchun?</b>\n– Diplomga ega bo‘lganlar\n– Mutaxassisligi bo‘yicha ishlashni istaganlar\n\n<b>✅ Talablar:</b>\nDiplom: kollej yoki bakalavr\nTil sertifikati: Goethe / Telc / ÖSD\nYosh: 20–40 yosh\n\n<b>💰 Harajat:</b> 1 500$ – 2 500$\n\n<b>🚀 Imkoniyatlar:</b> Qonuniy ishlash, oilani chaqirish, 3–5 yilda doimiy yashash.\n\n<b>Murojaat uchun : @Hoff_admin.",
+            { parse_mode: "HTML" }
+        )
+);
+bot.hears(
+    [GERMANY.ausbildung, "2️⃣ AUSBILDUNG"],
+    (ctx) =>
+        ctx.reply(
+            "<b>2️⃣ Ausbildung (Kasbiy ta’lim)</b>\n\n<b>👤 Kimlar uchun?</b>\n– 11 yillik ta’lim bitirganlar\n– O‘qish bilan birga maosh olishni xohlaganlar\n\n<b>✅ Talablar:</b>\nTil: Nemis tili B1\nYosh: odatda 30 yoshgacha\n\n<b>💰 Harajat:</b> 1 500$ – 2 000$\n\n<b>🚀 Imkoniyatlar:</b> O‘qish davomida maosh, tugatgach ishga qolish.\n\n<b>Murojaat uchun : @Hoff_admin.",
+            { parse_mode: "HTML" }
+        )
+);
+bot.hears(
+    [GERMANY.studienkolleg, "3️⃣ STUDIENKOLLEG"],
+    (ctx) =>
+        ctx.reply(
+            "<b>3️⃣ Studienkolleg (Tayyorlov)</b>\n\n<b>✅ Talablar:</b>\nNemis tili B1–B2, Kirish imtihoni, Moliyaviy kafolat.\n\n<b>🚀 Imkoniyatlar:</b> 1 yillik tayyorlovdan so'ng universitetga kirish huquqi.\n\n<b>Murojaat uchun : @Hoff_admin.",
+            { parse_mode: "HTML" }
+        )
+);
+bot.hears(
+    [GERMANY.bachelor, "4️⃣ BAKALAVR"],
+    (ctx) =>
+        ctx.reply(
+            "<b>4️⃣ Bakalavr (Bachelor)</b>\n\n<b>✅ Talablar:</b>\n12 yillik ta’lim, Nemis tili C1.\n\n<b>💰 Harajat:</b> Oyiga 1 091 € bloklangan hisob.\n\n<b>🚀 Imkoniyatlar:</b> Haftasiga 20 soat ishlash, bitirgach 18 oy ish qidirish vizasi.\n\n<b>Murojaat uchun : @Hoff_admin.",
+            { parse_mode: "HTML" }
+        )
+);
+bot.hears(
+    [GERMANY.master, "5️⃣ MAGISTR"],
+    (ctx) =>
+        ctx.reply(
+            "<b>5️⃣ Magistr (Master)</b>\n\n<b>✅ Talablar:</b>\nBakalavr diplomi, Nemis tili C1 yoki Ingliz tili (IELTS 6.5).\n\n<b>🚀 Imkoniyatlar:</b> Yuqori akademik daraja va oson ish topish.\n\n<b>Murojaat uchun : @Hoff_admin.",
+            { parse_mode: "HTML" }
+        )
+);
+bot.hears(
+    [GERMANY.sprachkurs, "6️⃣ TIL KURSI"],
+    (ctx) =>
+        ctx.reply(
+            "<b>6️⃣ Til kursi (Sprachkurs)</b>\n\n<b>✅ Talablar:</b>\nKamida A2 daraja, Til kursiga qabul, Moliyaviy kafolat.\n\n<b>🚀 Imkoniyatlar:</b> Germaniyada tilni tez o'rganish va keyin Ausbildungga o'tish.\n\n<b>Murojaat uchun : @Hoff_admin.",
+            { parse_mode: "HTML" }
+        )
+);
 
 bot.hears(BUTTONS.back, (ctx) => {
     return ctx.reply("Asosiy menyu:", mainMenuKeyboard());
