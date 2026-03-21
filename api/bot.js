@@ -8,6 +8,9 @@ const adminGroupId = '-1003356128763';
 const LESSON1_VIDEO_FILE_ID =
     'BAACAgIAAxkBAAPQabqPHBGMF4SuezNFGDJcxtkWfFgAAk1QAAIj70BKn2_zE9DFYZ46BA';
 
+const BLITZ_CENTER_PHOTO_FILE_ID =
+    'AgACAgIAAxkBAAIBpGm-23A6fAIRdyEtDO0C8qWylMxFAAKbFmsbXaT4SYO8PIz8vO9YAQADAgADeAADOgQ';
+
 const USERS_JSON = path.join(__dirname, '..', 'users.json');
 
 function readRegisteredUserIds() {
@@ -104,12 +107,6 @@ bot.command('stats', (ctx) => {
     return ctx.reply(`📊 Bot statistikasi:\nJami foydalanuvchilar: ${n} ta`);
 });
 
-// vaqtincha: rasm file_id olish
-bot.on('photo', (ctx) => {
-    const fileId = ctx.message.photo[ctx.message.photo.length - 1].file_id;
-    ctx.reply(`Rasm file_id: ${fileId}`);
-});
-
 // --- VIDEO DARS ---
 bot.hears(BUTTONS.lesson1, async (ctx) => {
     await ctx.reply("Birinchi dars yuklanmoqda, iltimos kuting... ⏳");
@@ -151,7 +148,18 @@ bot.hears(BUTTONS.back, (ctx) => {
     return ctx.reply("Asosiy menyu:", mainMenuKeyboard());
 });
 
-bot.hears(BUTTONS.center, (ctx) => ctx.reply(" <b>Blitz Nemis Tili Markazi</b>\nGermaniyada muvaffaqiyatli karyera qurishingiz uchun ishonchli ko'prik!\n\n", { parse_mode: 'HTML' }));
+bot.hears(BUTTONS.center, async (ctx) => {
+    const caption =
+        "<b>Blitz Nemis Tili Markazi</b>\nGermaniyada muvaffaqiyatli karyera qurishingiz uchun ishonchli ko'prik!";
+    try {
+        return await ctx.replyWithPhoto(BLITZ_CENTER_PHOTO_FILE_ID, {
+            caption,
+            parse_mode: 'HTML',
+        });
+    } catch (e) {
+        return ctx.reply(caption, { parse_mode: 'HTML' });
+    }
+});
 bot.hears(BUTTONS.addresses, (ctx) => ctx.reply("📍 <b>Manzilimiz:</b> Toshkent shahri, Blitz markazi.\n📞 Aloqa: +998...", { parse_mode: 'HTML' }));
 
 // --- VERCEL EXPORT ---
