@@ -108,7 +108,8 @@ const GERMANY_DETAIL_HTML = {
 function mainMenuKeyboard() {
     return Markup.keyboard([
         [BUTTONS.lesson1],
-        [BUTTONS.germany, BUTTONS.center],
+        [BUTTONS.germany],
+        [BUTTONS.center],
         [BUTTONS.addresses]
     ]).resize();
 }
