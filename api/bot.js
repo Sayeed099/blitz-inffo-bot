@@ -537,9 +537,10 @@ bot.command('stats', async (ctx) => {
     }
     const n = await getUniqueUserCount();
     return ctx.reply(
-        `📊 Bot statistikasi\n\n` +
-            `👤 Noyob foydalanuvchilar (botga yozgan / bosgan): <b>${n}</b> ta\n\n` +
-            `Hisoblash: har bir Telegram akkaunt 1 marta (shaxsiy chat).`,
+        `📊 <b>Bot Statistikasi</b>\n\n` +
+            `👥 Jami o'quvchilar: <b>${n}</b> ta\n` +
+            `📈 Holat: Real vaqt rejimida (Supabase)\n\n` +
+            `Hisoblash: Faqat botga start bosgan va ro'yxatdan o'tgan noyob foydalanuvchilar.`,
         { parse_mode: 'HTML' }
     );
 });
