@@ -160,19 +160,18 @@ function registerUser(userId) {
 }
 
 async function isRegisteredAsync(userId) {
-  if (supabase) {
-    const { data, error } = await supabase
-      .from("bot_users")
-      .select("telegram_user_id")
-      .eq("telegram_user_id", userId)
-      .maybeSingle();
-    if (error) {
-      console.error("Supabase (isRegistered):", error);
-      return isRegistered(userId);
-    }
-    return !!data;
+  if (isRegistered(userId)) return true;
+  if (!supabase) return false;
+  const { data, error } = await supabase
+    .from("bot_users")
+    .select("telegram_user_id")
+    .eq("telegram_user_id", userId)
+    .maybeSingle();
+  if (error) {
+    console.error("Supabase (isRegistered):", error);
+    return false;
   }
-  return isRegistered(userId);
+  return !!data;
 }
 
 /** @returns {Promise<boolean|null>} true = saqlandi, false = xato, null = Supabase yo'q */
@@ -311,12 +310,12 @@ bot.on("message:contact", async (ctx) => {
   }
 
   if (userId) {
-    const saved = await saveUserToSupabase(userId, {
+    await saveUserToSupabase(userId, {
       firstName,
       phone,
       username,
     });
-    if (saved !== true) registerUser(userId);
+    registerUser(userId);
   }
 
   await ctx.reply("Muvaffaqiyatli ro'yxatdan o'tdingiz!", {
