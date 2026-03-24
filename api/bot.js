@@ -2,7 +2,11 @@ const { Telegraf, Markup } = require('telegraf');
 const path = require('path');
 const fs = require('fs');
 
-const bot = new Telegraf('8611408395:AAFLc5nCy5vGR72IQEmX899hITId5IEkZgw');
+require('dotenv').config({ path: path.join(__dirname, '..', '.env') });
+
+const token = process.env.BOT_TOKEN;
+if (!token) throw new Error('BOT_TOKEN is required (Vercel Environment Variables yoki loyiha ildizidagi .env)');
+const bot = new Telegraf(token);
 const adminGroupId = '-1003356128763';
 
 bot.use((ctx, next) => {
