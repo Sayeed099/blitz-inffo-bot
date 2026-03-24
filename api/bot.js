@@ -1,8 +1,16 @@
 const { Telegraf, Markup } = require('telegraf');
 const path = require('path');
 const fs = require('fs');
+const { createClient } = require('@supabase/supabase-js');
 
 require('dotenv').config({ path: path.join(__dirname, '..', '.env') });
+
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_ANON_KEY;
+const supabase =
+    supabaseUrl && supabaseKey ? createClient(supabaseUrl, supabaseKey) : null;
+/** grammY bot bilan bir ro'yxat uchun: SUPABASE_USERS_TABLE=bot_users */
+const USERS_TABLE = process.env.SUPABASE_USERS_TABLE || 'users';
 
 const token = process.env.BOT_TOKEN;
 if (!token) throw new Error('BOT_TOKEN is required (Vercel Environment Variables yoki loyiha ildizidagi .env)');
@@ -33,6 +41,12 @@ const USERS_JSON =
     process.env.VERCEL === '1'
         ? path.join('/tmp', 'blitz-bot-users.json')
         : path.join(__dirname, '..', 'users.json');
+
+/** Supabase yo'q yoki yozuv muvaffaqiyatsiz — ro'yxatdan o'tganlar (faqat API bot) */
+const REGISTERED_JSON =
+    process.env.VERCEL === '1'
+        ? path.join('/tmp', 'blitz-bot-registered.json')
+        : path.join(__dirname, '..', 'registered-users-api.json');
 
 const UPSTASH_URL = process.env.UPSTASH_REDIS_REST_URL;
 const UPSTASH_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN;
@@ -95,6 +109,62 @@ function readRegisteredUserIds() {
 function writeRegisteredUserIds(ids) {
     const unique = [...new Set(ids.map(Number))];
     fs.writeFileSync(USERS_JSON, JSON.stringify({ ids: unique }, null, 2), 'utf8');
+}
+
+function readApiRegisteredIds() {
+    try {
+        if (!fs.existsSync(REGISTERED_JSON)) return [];
+        const data = JSON.parse(fs.readFileSync(REGISTERED_JSON, 'utf8'));
+        return Array.isArray(data.ids) ? data.ids.map(Number) : [];
+    } catch {
+        return [];
+    }
+}
+
+function writeApiRegisteredIds(ids) {
+    const unique = [...new Set(ids.map(Number))];
+    fs.writeFileSync(REGISTERED_JSON, JSON.stringify({ ids: unique }, null, 2), 'utf8');
+}
+
+/**
+ * @returns {Promise<{ registered: boolean, supabaseFailed: boolean }>}
+ * supabaseFailed: o'qishda xato — foydalanuvchi "yangi" deb telefon so'raladi
+ */
+async function getRegistrationState(telegramUserId) {
+    const id = Number(telegramUserId);
+    if (!id || Number.isNaN(id)) {
+        return { registered: false, supabaseFailed: false };
+    }
+    if (!supabase) {
+        return {
+            registered: readApiRegisteredIds().includes(id),
+            supabaseFailed: false,
+        };
+    }
+    try {
+        const { data, error } = await supabase
+            .from(USERS_TABLE)
+            .select('telegram_user_id')
+            .eq('telegram_user_id', id)
+            .maybeSingle();
+        if (error) throw error;
+        return { registered: !!data, supabaseFailed: false };
+    } catch (e) {
+        console.error('Supabase getRegistrationState:', e);
+        return { registered: false, supabaseFailed: true };
+    }
+}
+
+async function insertRegisteredUserRow(payload) {
+    if (!supabase) return { ok: false };
+    try {
+        const { error } = await supabase.from(USERS_TABLE).insert(payload);
+        if (error) throw error;
+        return { ok: true };
+    } catch (e) {
+        console.error('Supabase insertRegisteredUserRow:', e);
+        return { ok: false };
+    }
 }
 
 async function trackUniqueUser(telegramUserId) {
@@ -421,7 +491,7 @@ const BRANCHES = [
         address: "149A, Milliy Tiklanish koʻchasi, Andijon Region, Uzbekistan",
         directionsPrefix: "Mo'ljal",
         directionsText:
-            "Amir Temur Shoh ko'chasi, Bobour haykali yon tarafida",
+            "Amir Temur Shoh ko'chasi, Bobur haykali yon tarafida",
         bus: null,
         phone: "+9987811377161",
         yandexUrl:
@@ -493,9 +563,18 @@ async function replyBranchCard(ctx, b) {
 }
 
 // --- START ---
-bot.start((ctx) => {
+bot.start(async (ctx) => {
+    if (ctx.chat?.type !== "private") return;
+    const userId = ctx.from?.id;
+    if (!userId) return;
+
+    const { registered } = await getRegistrationState(userId);
+    if (registered) {
+        return ctx.reply("Qaytganingizdan xursandmiz!", mainMenuKeyboard());
+    }
+
     return ctx.reply(
-        "Assalomu alaykum!\nBlitz nemis tili markazi botiga xush kelibsiz.",
+        "Assalomu alaykum!\nBlitz nemis tili markazi botiga xush kelibsiz.\nIltimos, telefon raqamingizni yuboring:",
         Markup.keyboard([[Markup.button.contactRequest("📱 Telefon raqamni yuborish")]]).resize()
     );
 });
@@ -507,18 +586,46 @@ bot.on("contact", async (ctx) => {
         return ctx.reply("Iltimos, o‘zingizning telefon raqamingizni 📱 tugmasi orqali yuboring.");
     }
 
+    const userId = ctx.from.id;
     const phone = contact.phone_number;
     const name = ctx.from.first_name;
     const username = ctx.from.username ? `@${ctx.from.username}` : "yo'q";
 
-    try {
-        await bot.telegram.sendMessage(
-            adminGroupId,
-            `🚀 <b>Yangi o'quvchi:</b>\n👤 Ismi: ${name}\n📞 Tel: ${phone}\n🔗 Username: ${username}`,
-            { parse_mode: "HTML" }
-        );
-    } catch (e) {
-        console.error("Admin message fail", e);
+    const state = await getRegistrationState(userId);
+    if (state.registered) {
+        return ctx.reply("Siz allaqachon ro'yxatdan o'tgansiz.", mainMenuKeyboard());
+    }
+
+    const payload = {
+        telegram_user_id: userId,
+        first_name: name,
+        phone,
+        username,
+        registered_at: new Date().toISOString(),
+    };
+
+    let firstTimeSaved = false;
+    if (supabase) {
+        const ins = await insertRegisteredUserRow(payload);
+        firstTimeSaved = ins.ok;
+    } else {
+        const ids = readApiRegisteredIds();
+        if (!ids.includes(userId)) {
+            writeApiRegisteredIds([...ids, userId]);
+            firstTimeSaved = true;
+        }
+    }
+
+    if (firstTimeSaved) {
+        try {
+            await bot.telegram.sendMessage(
+                adminGroupId,
+                `🚀 <b>Yangi o'quvchi:</b>\n👤 Ismi: ${escapeHtml(name)}\n📞 Tel: ${escapeHtml(phone)}\n🔗 Username: ${escapeHtml(username)}`,
+                { parse_mode: "HTML" }
+            );
+        } catch (e) {
+            console.error("Admin message fail", e);
+        }
     }
 
     return ctx.reply("Rahmat, ro'yxatdan o'tdingiz!", mainMenuKeyboard());
