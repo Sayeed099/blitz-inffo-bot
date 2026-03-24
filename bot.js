@@ -3,6 +3,7 @@ const fs = require("node:fs");
 const path = require("node:path");
 const { Bot, Keyboard } = require("grammy");
 const { GoogleSpreadsheet } = require("google-spreadsheet");
+const { createClient } = require("@supabase/supabase-js");
 
 const token = process.env.BOT_TOKEN;
 const adminGroupId = process.env.ADMIN_GROUP_ID;
@@ -10,6 +11,11 @@ const lesson1VideoFileId = process.env.LESSON1_VIDEO_FILE_ID;
 const adminId = process.env.ADMIN_ID ? Number(process.env.ADMIN_ID) : null;
 const googleSheetId = process.env.GOOGLE_SHEET_ID;
 const googleSheetTab = process.env.GOOGLE_SHEET_TAB || "Sheet1";
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_ANON_KEY;
+
+const supabase =
+  supabaseUrl && supabaseKey ? createClient(supabaseUrl, supabaseKey) : null;
 
 if (!token) throw new Error("BOT_TOKEN is missing. Set it in .env");
 if (!adminGroupId) throw new Error("ADMIN_GROUP_ID is missing. Set it in .env");
@@ -153,6 +159,42 @@ function registerUser(userId) {
   }
 }
 
+async function isRegisteredAsync(userId) {
+  if (supabase) {
+    const { data, error } = await supabase
+      .from("bot_users")
+      .select("telegram_user_id")
+      .eq("telegram_user_id", userId)
+      .maybeSingle();
+    if (error) {
+      console.error("Supabase (isRegistered):", error);
+      return isRegistered(userId);
+    }
+    return !!data;
+  }
+  return isRegistered(userId);
+}
+
+/** @returns {Promise<boolean|null>} true = saqlandi, false = xato, null = Supabase yo'q */
+async function saveUserToSupabase(userId, { firstName, phone, username }) {
+  if (!supabase) return null;
+  const { error } = await supabase.from("bot_users").upsert(
+    {
+      telegram_user_id: userId,
+      first_name: firstName,
+      phone,
+      username,
+      registered_at: new Date().toISOString(),
+    },
+    { onConflict: "telegram_user_id" }
+  );
+  if (error) {
+    console.error("Supabase (saveUser):", error);
+    return false;
+  }
+  return true;
+}
+
 function contactKeyboard() {
   return new Keyboard().requestContact(BUTTONS.contact).resized().persistent();
 }
@@ -217,7 +259,7 @@ bot.command("start", async (ctx) => {
   const userId = ctx.from?.id;
   if (!userId) return;
 
-  if (!isRegistered(userId)) {
+  if (!(await isRegisteredAsync(userId))) {
     await ctx.reply("Assalomu alaykum! Iltimos, telefon raqamingizni yuboring:", {
       reply_markup: contactKeyboard(),
     });
@@ -233,7 +275,7 @@ bot.on("message:contact", async (ctx) => {
   const firstName = ctx.from?.first_name ?? "";
   const phone = ctx.message?.contact?.phone_number ?? "(telefon yo'q)";
 
-  if (userId && isRegistered(userId)) {
+  if (userId && (await isRegisteredAsync(userId))) {
     await ctx.reply("Siz ro'yxatdan o'tgansiz.", { reply_markup: mainMenuKeyboard() });
     return;
   }
@@ -268,7 +310,14 @@ bot.on("message:contact", async (ctx) => {
     console.error("Google Sheetsga yozishda xatolik:", e);
   }
 
-  if (userId) registerUser(userId);
+  if (userId) {
+    const saved = await saveUserToSupabase(userId, {
+      firstName,
+      phone,
+      username,
+    });
+    if (saved !== true) registerUser(userId);
+  }
 
   await ctx.reply("Muvaffaqiyatli ro'yxatdan o'tdingiz!", {
     reply_markup: mainMenuKeyboard(),

@@ -8,6 +8,7 @@
     "start": "node bot.js"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.100.0",
     "dotenv": "^16.6.1",
     "google-spreadsheet": "^4.1.4",
     "grammy": "^1.41.1",
