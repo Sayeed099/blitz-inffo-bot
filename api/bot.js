@@ -24,7 +24,59 @@ const BLITZ_CENTER_PHOTO_FILE_ID =
 /** Barcha filiallar uchun umumiy rasm file_id (keyin har filial uchun alohida almashtirasiz). Hozircha markaz rasmi. */
 const BRANCHES_PHOTO_FILE_ID = BLITZ_CENTER_PHOTO_FILE_ID;
 
-const USERS_JSON = path.join(__dirname, '..', 'users.json');
+/** Lokal: users.json. Vercel (Redis yo‘q): /tmp — barqaror emas. Production: Upstash Redis majburiy. */
+const USERS_JSON =
+    process.env.VERCEL === '1'
+        ? path.join('/tmp', 'blitz-bot-users.json')
+        : path.join(__dirname, '..', 'users.json');
+
+const UPSTASH_URL = process.env.UPSTASH_REDIS_REST_URL;
+const UPSTASH_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN;
+const USER_SET_KEY = 'blitz:unique_users';
+
+function hasUpstashRedis() {
+    return Boolean(UPSTASH_URL && UPSTASH_TOKEN);
+}
+
+async function upstashRedis(cmd) {
+    const res = await fetch(UPSTASH_URL, {
+        method: 'POST',
+        headers: {
+            Authorization: `Bearer ${UPSTASH_TOKEN}`,
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(cmd),
+    });
+    const text = await res.text();
+    let data;
+    try {
+        data = JSON.parse(text);
+    } catch {
+        throw new Error(text || `Upstash HTTP ${res.status}`);
+    }
+    if (!res.ok) {
+        throw new Error(data?.error || text || `Upstash HTTP ${res.status}`);
+    }
+    return data;
+}
+
+/** Vergul bilan ajratilgan Telegram user id lar — /stats ni shaxsiy chatda ham ishlatish uchun */
+function parseStatsAdminIds() {
+    const raw = process.env.STATS_ADMIN_IDS || '';
+    return raw
+        .split(/[,\s]+/)
+        .map((s) => s.trim())
+        .filter(Boolean)
+        .map(Number)
+        .filter((n) => !Number.isNaN(n));
+}
+
+function isStatsAllowed(ctx) {
+    if (String(ctx.chat?.id) === adminGroupId) return true;
+    const allow = parseStatsAdminIds();
+    if (allow.length && ctx.from && allow.includes(Number(ctx.from.id))) return true;
+    return false;
+}
 
 function readRegisteredUserIds() {
     try {
@@ -41,14 +93,59 @@ function writeRegisteredUserIds(ids) {
     fs.writeFileSync(USERS_JSON, JSON.stringify({ ids: unique }, null, 2), 'utf8');
 }
 
-function addRegisteredChatId(chatId) {
-    const id = Number(chatId);
-    const ids = readRegisteredUserIds();
-    if (!ids.includes(id)) {
-        ids.push(id);
-        writeRegisteredUserIds(ids);
+async function trackUniqueUser(telegramUserId) {
+    const id = Number(telegramUserId);
+    if (!id || Number.isNaN(id)) return;
+    if (hasUpstashRedis()) {
+        try {
+            await upstashRedis(['SADD', USER_SET_KEY, String(id)]);
+        } catch (e) {
+            console.error('Upstash SADD', e);
+            try {
+                const ids = readRegisteredUserIds();
+                if (!ids.includes(id)) {
+                    ids.push(id);
+                    writeRegisteredUserIds(ids);
+                }
+            } catch (f) {
+                console.error('trackUniqueUser fallback file', f);
+            }
+        }
+        return;
+    }
+    try {
+        const ids = readRegisteredUserIds();
+        if (!ids.includes(id)) {
+            ids.push(id);
+            writeRegisteredUserIds(ids);
+        }
+    } catch (e) {
+        console.error('trackUniqueUser file', e);
     }
 }
+
+async function getUniqueUserCount() {
+    if (hasUpstashRedis()) {
+        try {
+            const data = await upstashRedis(['SCARD', USER_SET_KEY]);
+            const n = data?.result;
+            return typeof n === 'number' ? n : 0;
+        } catch (e) {
+            console.error('Upstash SCARD', e);
+        }
+    }
+    return readRegisteredUserIds().length;
+}
+
+/** Shaxsiy chatdagi har bir foydalanuvchini (har qanday xabar) sanash */
+bot.use(async (ctx, next) => {
+    const chat = ctx.chat ?? ctx.callbackQuery?.message?.chat;
+    const uid = ctx.from?.id;
+    if (uid && chat?.type === 'private') {
+        await trackUniqueUser(uid);
+    }
+    return next();
+});
 
 const BUTTONS = {
     lesson1: "Nemis tilidan birinchi darsni olish",
@@ -420,19 +517,27 @@ bot.on("contact", async (ctx) => {
         console.error("Admin message fail", e);
     }
 
-    try {
-        addRegisteredChatId(ctx.chat.id);
-    } catch (e) {
-        console.error("users.json yozishda xato", e);
-    }
-
     return ctx.reply("Rahmat, ro'yxatdan o'tdingiz!", mainMenuKeyboard());
 });
 
-bot.command('stats', (ctx) => {
-    if (String(ctx.chat.id) !== adminGroupId) return;
-    const n = readRegisteredUserIds().length;
-    return ctx.reply(`📊 Bot statistikasi:\nJami foydalanuvchilar: ${n} ta`);
+bot.command('stats', async (ctx) => {
+    if (!isStatsAllowed(ctx)) {
+        if (ctx.chat?.type === 'private') {
+            return ctx.reply(
+                "Bu buyruq uchun ruxsat yo'q.\n\n" +
+                    'Variantlar: admin guruhida /stats yuboring yoki Vercelda STATS_ADMIN_IDS ga o‘z Telegram raqamingiz emas, <b>Telegram user ID</b>ingizni qo‘shing (masalan @userinfobot dan).',
+                { parse_mode: 'HTML' }
+            );
+        }
+        return;
+    }
+    const n = await getUniqueUserCount();
+    return ctx.reply(
+        `📊 Bot statistikasi\n\n` +
+            `👤 Noyob foydalanuvchilar (botga yozgan / bosgan): <b>${n}</b> ta\n\n` +
+            `Hisoblash: har bir Telegram akkaunt 1 marta (shaxsiy chat).`,
+        { parse_mode: 'HTML' }
+    );
 });
 
 // --- VIDEO DARS ---
