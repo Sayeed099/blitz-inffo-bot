@@ -24,6 +24,22 @@ const bot = new Bot(token);
 
 const USERS_PATH = path.join(__dirname, "users.json");
 const LOGO_PATH = path.join(__dirname, "assets", "blitz-logo.png");
+
+/** /start kirish matnlari — tahrirlash uchun asosan shu blok */
+const START_GREETING =
+  "Assalomu alaykum\nBlitz nemis tili o'quv markazi botiga xush kelibsiz";
+const START_CAPTION_NEW_USER = `${START_GREETING}\n\nIltimos, telefon raqamingizni yuboring:`;
+const START_CAPTION_RETURNING = `${START_GREETING}\n\nQaytganingizdan xursandmiz!`;
+
+/** api/bot.js dagi BOT_FLOW bilan bir xil matnlar — ketma-ketlik buzilmasin */
+const BOT_FLOW = {
+  MAIN_MENU: "Asosiy menyu:",
+  GERMANY_SECTION_PROMPT: "Kerakli bo'limni tanlang:",
+  GERMANY_INTRO:
+    "Germaniya — Yevropaning markazida joylashgan, iqtisodiy jihatdan rivojlangan davlatlardan biri. Yuqori turmush darajasi, sifatli ta'lim va kuchli sanoati bilan dunyoga mashhur. Quyida mamlakat haqida batafsilroq ma'lumot olishingiz mumkin:",
+  THANKS_REGISTER: "Muvaffaqiyatli ro'yxatdan o'tdingiz!",
+};
+
 let cachedGoogleSheet = null;
 
 function logoInputFile() {
@@ -271,27 +287,24 @@ bot.command("start", async (ctx) => {
 
   const logo = logoInputFile();
   if (!(await isRegisteredAsync(userId))) {
-    const cap =
-      "Assalomu alaykum!\nBlitz nemis tili markazi botiga xush kelibsiz.\nIltimos, telefon raqamingizni yuboring:";
     if (logo) {
       await ctx.replyWithPhoto(logo, {
-        caption: cap,
+        caption: START_CAPTION_NEW_USER,
         reply_markup: contactKeyboard(),
       });
     } else {
-      await ctx.reply(cap, { reply_markup: contactKeyboard() });
+      await ctx.reply(START_CAPTION_NEW_USER, { reply_markup: contactKeyboard() });
     }
     return;
   }
 
-  const capBack = "Assalomu alaykum!\nQaytganingizdan xursandmiz!";
   if (logo) {
     await ctx.replyWithPhoto(logo, {
-      caption: capBack,
+      caption: START_CAPTION_RETURNING,
       reply_markup: mainMenuKeyboard(),
     });
   } else {
-    await ctx.reply("Asosiy menyu:", { reply_markup: mainMenuKeyboard() });
+    await ctx.reply(START_CAPTION_RETURNING, { reply_markup: mainMenuKeyboard() });
   }
 });
 
@@ -345,7 +358,7 @@ bot.on("message:contact", async (ctx) => {
     registerUser(userId);
   }
 
-  await ctx.reply("Muvaffaqiyatli ro'yxatdan o'tdingiz!", {
+  await ctx.reply(BOT_FLOW.THANKS_REGISTER, {
     reply_markup: mainMenuKeyboard(),
   });
 });
@@ -365,18 +378,16 @@ bot.hears(BUTTONS.lesson1, async (ctx) => {
 });
 
 bot.hears(BUTTONS.germany, async (ctx) => {
-  await ctx.reply(
-    "Germaniya — Yevropaning markazida joylashgan, iqtisodiy jihatdan rivojlangan davlatlardan biri. Yuqori turmush darajasi, sifatli ta'lim va kuchli sanoati bilan dunyoga mashhur. Quyida mamlakat haqida batafsilroq ma'lumot olishingiz mumkin:",
-    { reply_markup: germanyKeyboard() }
-  );
+  const cap = `${BOT_FLOW.GERMANY_INTRO}\n\n${BOT_FLOW.GERMANY_SECTION_PROMPT}`;
+  await ctx.reply(cap, { reply_markup: germanyKeyboard() });
 });
 
 bot.hears([NAV_BACK, NAV_HOME], async (ctx) => {
-  await ctx.reply("Asosiy menyu:", { reply_markup: mainMenuKeyboard() });
+  await ctx.reply(BOT_FLOW.MAIN_MENU, { reply_markup: mainMenuKeyboard() });
 });
 
 bot.hears("Asosiy menyu", async (ctx) => {
-  await ctx.reply("Asosiy menyu:", { reply_markup: mainMenuKeyboard() });
+  await ctx.reply(BOT_FLOW.MAIN_MENU, { reply_markup: mainMenuKeyboard() });
 });
 
 bot.hears(GERMANY_MENU.general, async (ctx) => {

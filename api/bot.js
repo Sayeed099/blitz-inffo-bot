@@ -29,6 +29,12 @@ const USERS_TABLE = process.env.SUPABASE_USERS_TABLE || 'users';
 
 const LOGO_PATH = path.join(__dirname, '..', 'assets', 'blitz-logo.png');
 
+/** /start kirish matnlari — tahrirlash uchun asosan shu blok */
+const START_GREETING =
+    "Assalomu alaykum\nBlitz nemis tili o'quv markazi botiga xush kelibsiz";
+const START_CAPTION_NEW_USER = `${START_GREETING}\n\nIltimos, telefon raqamingizni yuboring:`;
+const START_CAPTION_RETURNING = `${START_GREETING}\n\nQaytganingizdan xursandmiz!`;
+
 const token = process.env.BOT_TOKEN;
 if (!token) throw new Error('BOT_TOKEN is required (Vercel Environment Variables yoki loyiha ildizidagi .env)');
 const bot = new Telegraf(token);
@@ -243,11 +249,35 @@ const GERMANY = {
     sprachkurs: "6️⃣ Til kursi",
 };
 
+/**
+ * Foydalanuvchi oqimi: /start → (kontakt) → asosiy menyu → Dars / Germaniya / Markaz / Manzillar.
+ * Bu kalitlar ketma-ketlikni buzmaslik uchun — matnni shu yerda o'zgartiring.
+ */
+const BOT_FLOW = {
+    MAIN_MENU: "Asosiy menyu:",
+    ADDRESSES_PROMPT: "Kerakli filialni tanlang:",
+    GERMANY_SECTION_PROMPT: "Kerakli bo'limni tanlang:",
+    GERMANY_INTRO:
+        "Germaniya — Yevropaning markazida joylashgan, iqtisodiy jihatdan rivojlangan davlatlardan biri. Yuqori turmush darajasi, sifatli ta'lim va kuchli sanoati bilan dunyoga mashhur. Quyida mamlakat haqida batafsilroq ma'lumot olishingiz mumkin:",
+    LESSON_WAIT: "Birinchi dars yuklanmoqda, iltimos kuting... ⏳",
+    CONTACT_INVALID:
+        "Iltimos, o'zingizning telefon raqamingizni 📱 tugmasi orqali yuboring.",
+    CONTACT_ALREADY: "Siz allaqachon ro'yxatdan o'tgansiz.",
+    THANKS_REGISTER: "Rahmat, ro'yxatdan o'tdingiz!",
+    CENTER_CAPTION:
+        "<b>Blitz Nemis Tili Markazi</b>\nGermaniyada muvaffaqiyatli karyera qurishingiz uchun ishonchli ko'prik!",
+    LESSON_CAPTION: "1-Dars: Ich heiße Miriam",
+    VIDEO_MISSING:
+        "Dars videosi hozircha mavjud emas. Keyinroq urinib ko'ring yoki markaz bilan bog'laning.",
+    VIDEO_ERROR: "Video yuklashda xatolik yuz berdi.",
+};
+
 /** Telegram klaviaturasi ba'zan ma'lumot ichidagi ' ni Unicode (') qilib yuboradi; shuningdek eski deploy tugmalari */
 const GERMANY_OPEN_TRIGGERS = [
     BUTTONS.germany,
+    "Germaniya haqida ma'lumot olish",
     "🇩🇪 Germaniya haqida ma\u2019lumot",
-    /^🇩🇪\s*Germaniya haqida ma['\u2019\u02BC]lumot$/u,
+    /^🇩🇪\s*Germaniya haqida ma['\u2019\u02BC]lumot(\s+olish)?$/u,
 ];
 
 /**
@@ -263,7 +293,12 @@ const GERMANY_RX = {
 };
 
 function replyGermanyHtml(ctx, html) {
-    return ctx.reply(html, { parse_mode: "HTML" }).catch(() => ctx.reply(html.replace(/<[^>]+>/g, "")));
+    const extra = { parse_mode: "HTML", ...germanySubmenuKeyboard() };
+    return ctx
+        .reply(html, extra)
+        .catch(() =>
+            ctx.reply(html.replace(/<[^>]+>/g, ""), germanySubmenuKeyboard())
+        );
 }
 
 const GERMANY_DETAIL_HTML = {
@@ -392,6 +427,15 @@ function mainMenuKeyboard() {
         [BUTTONS.germany],
         [BUTTONS.center],
         [BUTTONS.addresses]
+    ]).resize();
+}
+
+function germanySubmenuKeyboard() {
+    return Markup.keyboard([
+        [GERMANY.workVisa, GERMANY.ausbildung],
+        [GERMANY.studienkolleg, GERMANY.bachelor],
+        [GERMANY.master, GERMANY.sprachkurs],
+        [BUTTONS.back],
     ]).resize();
 }
 
@@ -553,21 +597,33 @@ function formatBranchCaptionHtml(b) {
 async function replyBranchCard(ctx, b) {
     const caption = formatBranchCaptionHtml(b);
     const photoId = BRANCHES_PHOTO_FILE_ID || BLITZ_CENTER_PHOTO_FILE_ID;
+    const branchKb = branchesReplyKeyboard();
     try {
         if (photoId) {
             return await ctx.replyWithPhoto(photoId, {
                 caption,
                 parse_mode: "HTML",
+                ...branchKb,
             });
         }
-        return await ctx.reply(caption, { parse_mode: "HTML" });
+        return await ctx.reply(caption, { parse_mode: "HTML", ...branchKb });
     } catch (e) {
         console.error("Filial rasm/xabar yuborishda xato", e);
-        return ctx.reply(caption, { parse_mode: "HTML" });
+        return ctx.reply(caption, { parse_mode: "HTML", ...branchKb });
     }
 }
 
-// --- START ---
+/*
+ * =====================================================================
+ * HANDLER TARTIBI (Telegraf ro‘yxati bo‘yicha — /start → Manzillar → admin)
+ * 1. /start        2. contact        3. 1-dars
+ * 4. Germaniya ochish (BOT_FLOW.GERMANY_INTRO + ichki menyu)
+ * 5. Germaniya ←   6. Markaz        7. Manzillar ro‘yxati
+ * 8. Manzillar ←   9. Filial kartasi 10. /stats   11. Germaniya batafsil (regex)
+ * Bu ketma-ketlikni buzmang: avval ro‘yxatdan o‘tish, keyin asosiy menyu.
+ * =====================================================================
+ */
+// --- 1. /start ---
 bot.start(async (ctx) => {
     if (ctx.chat?.type !== "private") return;
     const userId = ctx.from?.id;
@@ -579,32 +635,29 @@ bot.start(async (ctx) => {
     ]).resize();
 
     if (registered) {
-        const cap = "Assalomu alaykum!\nQaytganingizdan xursandmiz!";
         if (fs.existsSync(LOGO_PATH)) {
             return ctx.replyWithPhoto(
                 { source: LOGO_PATH },
-                { caption: cap, ...mainMenuKeyboard() }
+                { caption: START_CAPTION_RETURNING, ...mainMenuKeyboard() }
             );
         }
-        return ctx.reply(cap, mainMenuKeyboard());
+        return ctx.reply(START_CAPTION_RETURNING, mainMenuKeyboard());
     }
 
-    const capNew =
-        "Assalomu alaykum!\nBlitz nemis tili markazi botiga xush kelibsiz.\nIltimos, telefon raqamingizni yuboring:";
     if (fs.existsSync(LOGO_PATH)) {
         return ctx.replyWithPhoto(
             { source: LOGO_PATH },
-            { caption: capNew, ...contactKb }
+            { caption: START_CAPTION_NEW_USER, ...contactKb }
         );
     }
-    return ctx.reply(capNew, contactKb);
+    return ctx.reply(START_CAPTION_NEW_USER, contactKb);
 });
 
-// --- KONTAKT ---
+// --- 2. Ro‘yxat: kontakt ---
 bot.on("contact", async (ctx) => {
     const contact = ctx.message.contact;
     if (contact.user_id !== ctx.from.id) {
-        return ctx.reply("Iltimos, o‘zingizning telefon raqamingizni 📱 tugmasi orqali yuboring.");
+        return ctx.reply(BOT_FLOW.CONTACT_INVALID);
     }
 
     const userId = ctx.from.id;
@@ -614,7 +667,7 @@ bot.on("contact", async (ctx) => {
 
     const state = await getRegistrationState(userId);
     if (state.registered) {
-        return ctx.reply("Siz allaqachon ro'yxatdan o'tgansiz.", mainMenuKeyboard());
+        return ctx.reply(BOT_FLOW.CONTACT_ALREADY, mainMenuKeyboard());
     }
 
     const payload = {
@@ -657,16 +710,79 @@ bot.on("contact", async (ctx) => {
         }
     }
 
-    return ctx.reply("Rahmat, ro'yxatdan o'tdingiz!", mainMenuKeyboard());
+    return ctx.reply(BOT_FLOW.THANKS_REGISTER, mainMenuKeyboard());
 });
 
-bot.command('stats', async (ctx) => {
+// --- 3. Asosiy menyu: 1-dars ---
+bot.hears(BUTTONS.lesson1, async (ctx) => {
+    await ctx.reply(BOT_FLOW.LESSON_WAIT);
+    try {
+        if (LESSON1_VIDEO_FILE_ID) {
+            return await ctx.replyWithVideo(LESSON1_VIDEO_FILE_ID, {
+                caption: BOT_FLOW.LESSON_CAPTION,
+                ...mainMenuKeyboard(),
+            });
+        }
+        const videoPath = path.join(__dirname, '..', 'video.mp4');
+        if (fs.existsSync(videoPath)) {
+            return await ctx.replyWithVideo(
+                { source: videoPath },
+                { caption: BOT_FLOW.LESSON_CAPTION, ...mainMenuKeyboard() }
+            );
+        }
+        return ctx.reply(BOT_FLOW.VIDEO_MISSING, mainMenuKeyboard());
+    } catch (e) {
+        return ctx.reply(BOT_FLOW.VIDEO_ERROR, mainMenuKeyboard());
+    }
+});
+
+// --- 5–8. Germaniya → orqaga; Markaz; Manzillar; manzillardan chiqish ---
+function openGermanySubmenu(ctx) {
+    const caption = `${BOT_FLOW.GERMANY_INTRO}\n\n${BOT_FLOW.GERMANY_SECTION_PROMPT}`;
+    return ctx.reply(caption, germanySubmenuKeyboard());
+}
+
+bot.hears(GERMANY_OPEN_TRIGGERS, openGermanySubmenu);
+
+bot.hears(BUTTONS.back, (ctx) => {
+    return ctx.reply(BOT_FLOW.MAIN_MENU, mainMenuKeyboard());
+});
+
+bot.hears(BUTTONS.center, async (ctx) => {
+    try {
+        return await ctx.replyWithPhoto(BLITZ_CENTER_PHOTO_FILE_ID, {
+            caption: BOT_FLOW.CENTER_CAPTION,
+            parse_mode: "HTML",
+            ...mainMenuKeyboard(),
+        });
+    } catch (e) {
+        return ctx.reply(BOT_FLOW.CENTER_CAPTION, {
+            parse_mode: "HTML",
+            ...mainMenuKeyboard(),
+        });
+    }
+});
+bot.hears(BUTTONS.addresses, (ctx) => {
+    return ctx.reply(BOT_FLOW.ADDRESSES_PROMPT, branchesReplyKeyboard());
+});
+
+bot.hears(BRANCH_PICKER_BACK, (ctx) => {
+    return ctx.reply(BOT_FLOW.MAIN_MENU, mainMenuKeyboard());
+});
+
+// --- 9. Filial (manzil) kartasi ---
+BRANCH_MENU_LABELS.forEach((label, idx) => {
+    bot.hears(label, (ctx) => replyBranchCard(ctx, BRANCHES[idx]));
+});
+
+// --- 10. /stats (faqat ruxsat berilganlar) ---
+bot.command("stats", async (ctx) => {
     if (!isStatsAllowed(ctx)) {
-        if (ctx.chat?.type === 'private') {
+        if (ctx.chat?.type === "private") {
             return ctx.reply(
                 "Bu buyruq uchun ruxsat yo'q.\n\n" +
-                    'Variantlar: admin guruhida /stats yuboring yoki Vercelda STATS_ADMIN_IDS ga o‘z Telegram raqamingiz emas, <b>Telegram user ID</b>ingizni qo‘shing (masalan @userinfobot dan).',
-                { parse_mode: 'HTML' }
+                    "Variantlar: admin guruhida /stats yuboring yoki Vercelda STATS_ADMIN_IDS ga o‘z Telegram raqamingiz emas, <b>Telegram user ID</b>ingizni qo‘shing (masalan @userinfobot dan).",
+                { parse_mode: "HTML" }
             );
         }
         return;
@@ -677,72 +793,11 @@ bot.command('stats', async (ctx) => {
             `👥 Jami o'quvchilar: <b>${n}</b> ta\n` +
             `📈 Holat: Real vaqt rejimida (Supabase)\n\n` +
             `Hisoblash: Faqat botga start bosgan va ro'yxatdan o'tgan noyob foydalanuvchilar.`,
-        { parse_mode: 'HTML' }
+        { parse_mode: "HTML" }
     );
 });
 
-// --- VIDEO DARS ---
-bot.hears(BUTTONS.lesson1, async (ctx) => {
-    await ctx.reply("Birinchi dars yuklanmoqda, iltimos kuting... ⏳");
-    const caption = "1-Dars: Ich heiße Miriam";
-    try {
-        if (LESSON1_VIDEO_FILE_ID) {
-            return await ctx.replyWithVideo(LESSON1_VIDEO_FILE_ID, { caption });
-        }
-        const videoPath = path.join(__dirname, '..', 'video.mp4');
-        if (fs.existsSync(videoPath)) {
-            return await ctx.replyWithVideo({ source: videoPath }, { caption });
-        }
-        return ctx.reply("Dars videosi hozircha mavjud emas. Keyinroq urinib ko‘ring yoki markaz bilan bog‘laning.");
-    } catch (e) {
-        return ctx.reply("Video yuklashda xatolik yuz berdi.");
-    }
-});
-
-// --- GERMANIYA MENYULARI (MATNLAR) ---
-function openGermanySubmenu(ctx) {
-    return ctx.reply(
-        "Kerakli bo'limni tanlang:",
-        Markup.keyboard([
-            [GERMANY.workVisa, GERMANY.ausbildung],
-            [GERMANY.studienkolleg, GERMANY.bachelor],
-            [GERMANY.master, GERMANY.sprachkurs],
-            [BUTTONS.back],
-        ]).resize()
-    );
-}
-
-bot.hears(GERMANY_OPEN_TRIGGERS, openGermanySubmenu);
-
-bot.hears(BUTTONS.back, (ctx) => {
-    return ctx.reply("Asosiy menyu:", mainMenuKeyboard());
-});
-
-bot.hears(BUTTONS.center, async (ctx) => {
-    const caption =
-        "<b>Blitz Nemis Tili Markazi</b>\nGermaniyada muvaffaqiyatli karyera qurishingiz uchun ishonchli ko'prik!";
-    try {
-        return await ctx.replyWithPhoto(BLITZ_CENTER_PHOTO_FILE_ID, {
-            caption,
-            parse_mode: 'HTML',
-        });
-    } catch (e) {
-        return ctx.reply(caption, { parse_mode: 'HTML' });
-    }
-});
-bot.hears(BUTTONS.addresses, (ctx) => {
-    return ctx.reply("Kerakli filialni tanlang:", branchesReplyKeyboard());
-});
-
-bot.hears(BRANCH_PICKER_BACK, (ctx) => {
-    return ctx.reply("Asosiy menyu:", mainMenuKeyboard());
-});
-
-BRANCH_MENU_LABELS.forEach((label, idx) => {
-    bot.hears(label, (ctx) => replyBranchCard(ctx, BRANCHES[idx]));
-});
-
-/** hears zanjirida emoji mos kelmasa ham ishlashi uchun (oxirgi use — ichki next chaqirilgach ishlaydi) */
+/** --- 11. Germaniya: raqamli tugmalar matni barcha variantlarda --- */
 bot.use((ctx, next) => {
     const t = ctx.message?.text;
     if (typeof t !== "string") return next();
