@@ -5,10 +5,25 @@ const { createClient } = require('@supabase/supabase-js');
 
 require('dotenv').config({ path: path.join(__dirname, '..', '.env') });
 
-const supabaseUrl = process.env.SUPABASE_URL;
-const supabaseKey = process.env.SUPABASE_ANON_KEY;
 const supabase =
-    supabaseUrl && supabaseKey ? createClient(supabaseUrl, supabaseKey) : null;
+    process.env.SUPABASE_URL &&
+    (process.env.SUPABASE_KEY || process.env.SUPABASE_ANON_KEY)
+        ? createClient(
+              process.env.SUPABASE_URL,
+              process.env.SUPABASE_KEY || process.env.SUPABASE_ANON_KEY
+          )
+        : null;
+
+if (!process.env.SUPABASE_URL) {
+    console.error(
+        "[Supabase] SUPABASE_URL bo'sh yoki undefined — createClient ishlamaydi."
+    );
+}
+if (!process.env.SUPABASE_KEY && !process.env.SUPABASE_ANON_KEY) {
+    console.error(
+        "[Supabase] SUPABASE_KEY va SUPABASE_ANON_KEY ikkalasi ham bo'sh — createClient ishlamaydi."
+    );
+}
 /** grammY bot bilan bir ro'yxat uchun: SUPABASE_USERS_TABLE=bot_users */
 const USERS_TABLE = process.env.SUPABASE_USERS_TABLE || 'users';
 
@@ -152,18 +167,6 @@ async function getRegistrationState(telegramUserId) {
     } catch (e) {
         console.error('Supabase getRegistrationState:', e);
         return { registered: false, supabaseFailed: true };
-    }
-}
-
-async function insertRegisteredUserRow(payload) {
-    if (!supabase) return { ok: false };
-    try {
-        const { error } = await supabase.from(USERS_TABLE).insert(payload);
-        if (error) throw error;
-        return { ok: true };
-    } catch (e) {
-        console.error('Supabase insertRegisteredUserRow:', e);
-        return { ok: false };
     }
 }
 
@@ -606,8 +609,16 @@ bot.on("contact", async (ctx) => {
 
     let firstTimeSaved = false;
     if (supabase) {
-        const ins = await insertRegisteredUserRow(payload);
-        firstTimeSaved = ins.ok;
+        try {
+            const { error } = await supabase
+                .from(USERS_TABLE)
+                .upsert(payload, { onConflict: 'telegram_user_id' });
+            if (error) throw error;
+            firstTimeSaved = true;
+        } catch (e) {
+            console.error('Supabase (contact upsert):', e);
+            firstTimeSaved = false;
+        }
     } else {
         const ids = readApiRegisteredIds();
         if (!ids.includes(userId)) {
