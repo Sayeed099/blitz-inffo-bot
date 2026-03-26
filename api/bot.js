@@ -1,3 +1,8 @@
+/**
+ * Telegram yangilanishlari faqat shu bot orqali ishlashi kerak: webhook URL = .../api/bot
+ * AmoCRM “chat” integratsiyasi agar Telegram webhookni o‘ziga olib qosa, menyular va avto-javoblar ishlamay qoladi.
+ * AmoCRM faqat server ichidan chaqiriladi (kontakt/lead): foydalanuvchi chatda yozsa ham, menyudan bossa ham xabarlar shu endpointga kelishi shart.
+ */
 const { Telegraf, Markup } = require('telegraf');
 const path = require('path');
 const fs = require('fs');
@@ -38,7 +43,7 @@ const START_CAPTION_RETURNING = `${START_GREETING}\n\nQaytganingizdan xursandmiz
 const token = process.env.BOT_TOKEN;
 if (!token) throw new Error('BOT_TOKEN is required (Vercel Environment Variables yoki loyiha ildizidagi .env)');
 const bot = new Telegraf(token);
-const adminGroupId = '-1003356128763';
+const adminGroupId = String(process.env.ADMIN_GROUP_ID || '-1003356128763');
 
 bot.use((ctx, next) => {
     if (ctx.message && typeof ctx.message.text === "string") {
@@ -183,6 +188,7 @@ async function getRegistrationState(telegramUserId) {
  * AMOCRM_BASE_URL=https://SUBDOMAIN.amocrm.ru yoki https://SUBDOMAIN.kommo.com
  * AMOCRM_ACCESS_TOKEN — OAuth Bearer token
  * Ixtiyoriy: AMOCRM_PIPELINE_ID, AMOCRM_STATUS_ID, AMOCRM_PHONE_FIELD_ID, AMOCRM_TELEGRAM_FIELD_ID
+ * leads/complex kontaktni nom, telefon, (ixtiyoriy) username maydonlari bilan yaratadi — AmoCRM chat alohida.
  */
 async function sendAmoCrmNewLead({
     firstName,
@@ -215,12 +221,17 @@ async function sendAmoCrmNewLead({
         });
     }
 
+    const contactName =
+        `${firstName || "Telegram"}`.trim() +
+        (username && username !== "yo'q" ? ` · ${username}` : "") +
+        ` · id:${telegramUserId}`;
+
     const lead = {
-        name: `${firstName || "Telegram"} · TG ${telegramUserId}`,
+        name: contactName,
         _embedded: {
             contacts: [
                 {
-                    name: firstName || "Telegram",
+                    name: contactName,
                     custom_fields_values: contactCustomFields,
                 },
             ],
@@ -772,21 +783,19 @@ bot.on("contact", async (ctx) => {
     }
 
     if (firstTimeSaved) {
-        try {
-            await bot.telegram.sendMessage(
-                adminGroupId,
-                `🚀 <b>Yangi o'quvchi:</b>\n👤 Ismi: ${escapeHtml(name)}\n📞 Tel: ${escapeHtml(phone)}\n🔗 Username: ${escapeHtml(username)}`,
-                { parse_mode: "HTML" }
-            );
-        } catch (e) {
-            console.error("Admin message fail", e);
-        }
-        await sendAmoCrmNewLead({
-            firstName: name,
-            phone,
-            username,
-            telegramUserId: userId,
-        });
+        const adminText =
+            `🚀 <b>Yangi o'quvchi:</b>\n👤 Ismi: ${escapeHtml(name)}\n📞 Tel: ${escapeHtml(phone)}\n🔗 Username: ${escapeHtml(username)}`;
+        await Promise.all([
+            bot.telegram
+                .sendMessage(adminGroupId, adminText, { parse_mode: "HTML" })
+                .catch((e) => console.error("Admin message fail", e)),
+            sendAmoCrmNewLead({
+                firstName: name,
+                phone,
+                username,
+                telegramUserId: userId,
+            }),
+        ]);
     }
 
     return ctx.reply(BOT_FLOW.THANKS_REGISTER, mainMenuKeyboard());
