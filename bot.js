@@ -160,18 +160,24 @@ function registerUser(userId) {
 }
 
 async function isRegisteredAsync(userId) {
-  if (isRegistered(userId)) return true;
-  if (!supabase) return false;
-  const { data, error } = await supabase
-    .from("bot_users")
-    .select("telegram_user_id")
-    .eq("telegram_user_id", userId)
-    .maybeSingle();
-  if (error) {
-    console.error("Supabase (isRegistered):", error);
+  if (!supabase) {
+    return isRegistered(userId);
+  }
+  try {
+    const { data, error } = await supabase
+      .from("bot_users")
+      .select("telegram_user_id")
+      .eq("telegram_user_id", userId)
+      .maybeSingle();
+    if (error) {
+      console.error("Supabase (isRegistered):", error);
+      return false;
+    }
+    return !!data;
+  } catch (e) {
+    console.error("Supabase (isRegistered):", e);
     return false;
   }
-  return !!data;
 }
 
 /** @returns {Promise<boolean|null>} true = saqlandi, false = xato, null = Supabase yo'q */
