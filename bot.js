@@ -1,7 +1,7 @@
 require("dotenv").config();
 const fs = require("node:fs");
 const path = require("node:path");
-const { Bot, Keyboard } = require("grammy");
+const { Bot, Keyboard, InputFile } = require("grammy");
 const { GoogleSpreadsheet } = require("google-spreadsheet");
 const { createClient } = require("@supabase/supabase-js");
 
@@ -23,7 +23,12 @@ if (!adminGroupId) throw new Error("ADMIN_GROUP_ID is missing. Set it in .env");
 const bot = new Bot(token);
 
 const USERS_PATH = path.join(__dirname, "users.json");
+const LOGO_PATH = path.join(__dirname, "assets", "blitz-logo.png");
 let cachedGoogleSheet = null;
+
+function logoInputFile() {
+  return fs.existsSync(LOGO_PATH) ? new InputFile(LOGO_PATH) : null;
+}
 
 function escapeHtml(text) {
   return String(text ?? "")
@@ -264,14 +269,30 @@ bot.command("start", async (ctx) => {
   const userId = ctx.from?.id;
   if (!userId) return;
 
+  const logo = logoInputFile();
   if (!(await isRegisteredAsync(userId))) {
-    await ctx.reply("Assalomu alaykum! Iltimos, telefon raqamingizni yuboring:", {
-      reply_markup: contactKeyboard(),
-    });
+    const cap =
+      "Assalomu alaykum!\nBlitz nemis tili markazi botiga xush kelibsiz.\nIltimos, telefon raqamingizni yuboring:";
+    if (logo) {
+      await ctx.replyWithPhoto(logo, {
+        caption: cap,
+        reply_markup: contactKeyboard(),
+      });
+    } else {
+      await ctx.reply(cap, { reply_markup: contactKeyboard() });
+    }
     return;
   }
 
-  await ctx.reply("Asosiy menyu:", { reply_markup: mainMenuKeyboard() });
+  const capBack = "Assalomu alaykum!\nQaytganingizdan xursandmiz!";
+  if (logo) {
+    await ctx.replyWithPhoto(logo, {
+      caption: capBack,
+      reply_markup: mainMenuKeyboard(),
+    });
+  } else {
+    await ctx.reply("Asosiy menyu:", { reply_markup: mainMenuKeyboard() });
+  }
 });
 
 bot.on("message:contact", async (ctx) => {

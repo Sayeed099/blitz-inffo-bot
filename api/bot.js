@@ -27,6 +27,8 @@ if (!process.env.SUPABASE_KEY && !process.env.SUPABASE_ANON_KEY) {
 /** grammY bot bilan bir ro'yxat uchun: SUPABASE_USERS_TABLE=bot_users */
 const USERS_TABLE = process.env.SUPABASE_USERS_TABLE || 'users';
 
+const LOGO_PATH = path.join(__dirname, '..', 'assets', 'blitz-logo.png');
+
 const token = process.env.BOT_TOKEN;
 if (!token) throw new Error('BOT_TOKEN is required (Vercel Environment Variables yoki loyiha ildizidagi .env)');
 const bot = new Telegraf(token);
@@ -572,14 +574,30 @@ bot.start(async (ctx) => {
     if (!userId) return;
 
     const { registered } = await getRegistrationState(userId);
+    const contactKb = Markup.keyboard([
+        [Markup.button.contactRequest("📱 Telefon raqamni yuborish")],
+    ]).resize();
+
     if (registered) {
-        return ctx.reply("Qaytganingizdan xursandmiz!", mainMenuKeyboard());
+        const cap = "Assalomu alaykum!\nQaytganingizdan xursandmiz!";
+        if (fs.existsSync(LOGO_PATH)) {
+            return ctx.replyWithPhoto(
+                { source: LOGO_PATH },
+                { caption: cap, ...mainMenuKeyboard() }
+            );
+        }
+        return ctx.reply(cap, mainMenuKeyboard());
     }
 
-    return ctx.reply(
-        "Assalomu alaykum!\nBlitz nemis tili markazi botiga xush kelibsiz.\nIltimos, telefon raqamingizni yuboring:",
-        Markup.keyboard([[Markup.button.contactRequest("📱 Telefon raqamni yuborish")]]).resize()
-    );
+    const capNew =
+        "Assalomu alaykum!\nBlitz nemis tili markazi botiga xush kelibsiz.\nIltimos, telefon raqamingizni yuboring:";
+    if (fs.existsSync(LOGO_PATH)) {
+        return ctx.replyWithPhoto(
+            { source: LOGO_PATH },
+            { caption: capNew, ...contactKb }
+        );
+    }
+    return ctx.reply(capNew, contactKb);
 });
 
 // --- KONTAKT ---
