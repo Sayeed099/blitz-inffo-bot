@@ -178,6 +178,79 @@ async function getRegistrationState(telegramUserId) {
     }
 }
 
+/**
+ * AmoCRM / Kommo: faqat serverdan chaqiring. Telegram webhook /api/bot da qolsin — aks holda menyu ishlamay qoladi.
+ * AMOCRM_BASE_URL=https://SUBDOMAIN.amocrm.ru yoki https://SUBDOMAIN.kommo.com
+ * AMOCRM_ACCESS_TOKEN — OAuth Bearer token
+ * Ixtiyoriy: AMOCRM_PIPELINE_ID, AMOCRM_STATUS_ID, AMOCRM_PHONE_FIELD_ID, AMOCRM_TELEGRAM_FIELD_ID
+ */
+async function sendAmoCrmNewLead({
+    firstName,
+    phone,
+    username,
+    telegramUserId,
+}) {
+    const base = (process.env.AMOCRM_BASE_URL || "").replace(/\/$/, "");
+    const token = process.env.AMOCRM_ACCESS_TOKEN || "";
+    if (!base || !token) return;
+
+    const contactCustomFields = [];
+    const phoneFieldId = process.env.AMOCRM_PHONE_FIELD_ID;
+    if (phoneFieldId) {
+        contactCustomFields.push({
+            field_id: Number(phoneFieldId),
+            values: [{ value: String(phone) }],
+        });
+    } else {
+        contactCustomFields.push({
+            field_code: "PHONE",
+            values: [{ value: String(phone), enum_code: "WORK" }],
+        });
+    }
+    const tgFieldId = process.env.AMOCRM_TELEGRAM_FIELD_ID;
+    if (tgFieldId) {
+        contactCustomFields.push({
+            field_id: Number(tgFieldId),
+            values: [{ value: String(username) }],
+        });
+    }
+
+    const lead = {
+        name: `${firstName || "Telegram"} · TG ${telegramUserId}`,
+        _embedded: {
+            contacts: [
+                {
+                    name: firstName || "Telegram",
+                    custom_fields_values: contactCustomFields,
+                },
+            ],
+        },
+    };
+
+    const pid = process.env.AMOCRM_PIPELINE_ID;
+    const sid = process.env.AMOCRM_STATUS_ID;
+    if (pid && sid) {
+        lead.pipeline_id = Number(pid);
+        lead.status_id = Number(sid);
+    }
+
+    try {
+        const res = await fetch(`${base}/api/v4/leads/complex`, {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${token}`,
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify([lead]),
+        });
+        if (!res.ok) {
+            console.error("AmoCRM leads/complex:", res.status, await res.text());
+        }
+    } catch (e) {
+        console.error("AmoCRM:", e);
+    }
+}
+
 async function trackUniqueUser(telegramUserId) {
     const id = Number(telegramUserId);
     if (!id || Number.isNaN(id)) return;
@@ -708,6 +781,12 @@ bot.on("contact", async (ctx) => {
         } catch (e) {
             console.error("Admin message fail", e);
         }
+        await sendAmoCrmNewLead({
+            firstName: name,
+            phone,
+            username,
+            telegramUserId: userId,
+        });
     }
 
     return ctx.reply(BOT_FLOW.THANKS_REGISTER, mainMenuKeyboard());
